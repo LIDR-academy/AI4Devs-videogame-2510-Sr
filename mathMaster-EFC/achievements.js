@@ -270,12 +270,20 @@ const MathMasterAchievements = {
         const unlocked = this.isUnlocked(achievement.id);
         const lockedClass = !unlocked && showLocked ? 'achievement-locked' : '';
 
+        // Obtener nombres y descripciones traducidos
+        const name = typeof MathMasterI18n !== 'undefined'
+            ? MathMasterI18n.getAchievementName(achievement.id)
+            : achievement.name;
+        const description = typeof MathMasterI18n !== 'undefined'
+            ? MathMasterI18n.getAchievementDescription(achievement.id)
+            : achievement.description;
+
         return `
             <div class="achievement-card ${lockedClass}" data-achievement-id="${achievement.id}">
                 <div class="achievement-icon">${unlocked ? achievement.icon : '🔒'}</div>
                 <div class="achievement-info">
-                    <div class="achievement-name">${achievement.name}</div>
-                    <div class="achievement-description">${achievement.description}</div>
+                    <div class="achievement-name">${name}</div>
+                    <div class="achievement-description">${description}</div>
                 </div>
             </div>
         `;
@@ -289,6 +297,11 @@ const MathMasterAchievements = {
         const achievements = this.getAllWithStatus();
         const progress = this.getProgress();
 
+        // Obtener título traducido
+        const title = typeof MathMasterI18n !== 'undefined'
+            ? MathMasterI18n.t('achievements')
+            : 'Logros';
+
         // Ordenar: desbloqueados primero
         achievements.sort((a, b) => {
             if (a.unlocked && !b.unlocked) return -1;
@@ -298,7 +311,7 @@ const MathMasterAchievements = {
 
         return `
             <div class="achievements-header">
-                <h3>Logros</h3>
+                <h3>${title}</h3>
                 <div class="achievements-progress">
                     <div class="progress-bar">
                         <div class="progress-fill" style="width: ${progress.percentage}%"></div>
@@ -318,13 +331,21 @@ const MathMasterAchievements = {
      * @returns {string} HTML de la notificación
      */
     renderNotification(achievement) {
+        // Obtener textos traducidos
+        const title = typeof MathMasterI18n !== 'undefined'
+            ? MathMasterI18n.t('achievementUnlockedTitle')
+            : '¡Logro Desbloqueado!';
+        const name = typeof MathMasterI18n !== 'undefined'
+            ? MathMasterI18n.getAchievementName(achievement.id)
+            : achievement.name;
+
         return `
             <div class="achievement-notification" data-achievement-id="${achievement.id}">
                 <div class="notification-content">
                     <div class="notification-icon">${achievement.icon}</div>
                     <div class="notification-text">
-                        <div class="notification-title">¡Logro Desbloqueado!</div>
-                        <div class="notification-name">${achievement.name}</div>
+                        <div class="notification-title">${title}</div>
+                        <div class="notification-name">${name}</div>
                     </div>
                 </div>
             </div>

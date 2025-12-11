@@ -341,6 +341,201 @@ Se implementó el sistema completo de accesibilidad, audio y progresión:
 
 ---
 
+## Prompt #4 - Internacionalización (i18n)
+
+**Fecha:** 12 de Diciembre de 2024
+
+**Rol:** Eres un Líder de Producto (Product Manager) y Arquitecto de Software, con nivel de competencia C2 en inglés, castellano y euskera. Tu especialidad es la internacionalización (i18n) de aplicaciones web.
+
+**Objetivo:** Elaborar la implementación centrada exclusivamente en la **Internacionalización**, siguiendo las especificaciones de la Épica 1.
+
+**Decisión Técnica Clave (Persistencia de Datos):**
+Para garantizar la máxima sencillez en la implementación y el despliegue, la persistencia de la preferencia de idioma se implementará usando la misma tecnología ya utilizada (IndexedDB/localStorage).
+
+---
+
+# Épica 1: Internacionalización y Selección de Idioma
+
+## US 1.1: Mapeo y Externalización de Cadenas de Texto
+**Como** desarrollador,
+**Quiero** externalizar todas las cadenas de texto visibles al usuario a un módulo de traducción,
+**Para que** el contenido pueda ser traducido y gestionado de forma centralizada.
+
+### Criterios de Aceptación:
+- [ ] Todas las cadenas de texto en `index.html`, `game.js` y `achievements.js` están identificadas
+- [ ] Se utiliza un sistema de claves (`data-i18n`) para referenciar las traducciones
+- [ ] Ningún texto visible al usuario está hardcodeado en el código
+
+## US 1.2: Implementación de Módulos de Traducción
+**Como** desarrollador,
+**Quiero** implementar un módulo de i18n con diccionarios para cada idioma,
+**Para que** el sistema pueda cargar y mostrar el contenido en el idioma seleccionado.
+
+### Criterios de Aceptación:
+- [ ] Existe un archivo `i18n.js` con la estructura de traducciones
+- [ ] Se implementan diccionarios para: Castellano (es-ES), Inglés (en-US), Euskera (eu-ES)
+- [ ] El módulo expone funciones `t(key)`, `setLanguage(lang)` y `getCurrentLanguage()`
+
+## US 1.3: Interfaz de Selección de Idioma
+**Como** jugador,
+**Quiero** poder seleccionar mi idioma preferido desde la configuración,
+**Para que** toda la interfaz se muestre en el idioma que elija.
+
+### Criterios de Aceptación:
+- [ ] Existe un selector de idioma en el modal de configuración
+- [ ] El selector muestra banderas e identificadores (🇪🇸 ES, 🇺🇸 EN, 🏴 EU)
+- [ ] Al cambiar el idioma, toda la UI se actualiza inmediatamente
+
+## US 1.4: Persistencia de Preferencia de Idioma
+**Como** jugador,
+**Quiero** que mi preferencia de idioma se guarde automáticamente,
+**Para que** al volver al juego se mantenga mi idioma seleccionado.
+
+### Criterios de Aceptación:
+- [ ] La preferencia de idioma se guarda en `localStorage`
+- [ ] Al cargar la aplicación, se restaura el idioma guardado
+- [ ] Si no hay preferencia, se detecta el idioma del navegador
+
+---
+
+## Respuesta al Prompt #4
+
+### Implementación Realizada
+
+Se implementó el sistema completo de internacionalización con soporte para tres idiomas:
+
+#### Archivos Nuevos Creados:
+1. **`i18n.js`** (~850 líneas) - Módulo de internacionalización con:
+   - Diccionarios completos para es-ES, en-US, eu-ES
+   - Traducciones de: UI general, operaciones, niveles, logros, feedback, configuración
+   - Métodos: `init()`, `loadLanguage()`, `setLanguage()`, `t(key, params)`, `applyLanguage()`
+   - Interpolación de parámetros ({streak}, {username}, etc.)
+   - Helpers: `getOperationName()`, `getLevelInfo()`, `getAchievementInfo()`
+
+#### Archivos Modificados:
+1. **`index.html`**:
+   - Añadidos atributos `data-i18n` a ~50+ elementos
+   - Nuevo selector de idioma en modal de configuración
+   - Soporte para `data-i18n-placeholder` y `data-i18n-aria`
+
+2. **`game.js`**:
+   - Integración con MathMasterI18n en todas las funciones con texto dinámico
+   - Funciones actualizadas: feedback, hints, results, stats, confirmations
+
+3. **`achievements.js`**:
+   - `renderAchievementCard()`: usa traducciones para nombre y descripción
+   - `renderAchievementsList()`: título traducido
+   - `renderNotification()`: textos traducidos
+
+4. **`styles.css`**:
+   - Estilos para `.language-selector` y `.lang-btn`
+   - Estados hover y active con efectos visuales
+
+### Características del Sistema i18n
+
+| Característica | Descripción |
+|----------------|-------------|
+| Idiomas soportados | Castellano (es-ES), English (en-US), Euskara (eu-ES) |
+| Selector visual | Banderas con códigos de país |
+| Persistencia | localStorage con clave `mathmaster_language` |
+| Detección automática | Detecta idioma del navegador como fallback |
+| Actualización dinámica | Evento `languageChanged` para UI reactiva |
+| Interpolación | Soporte para parámetros dinámicos en traducciones |
+
+---
+
+## Prompt #5 - Mejoras TTS y Pantalla de Perfil
+
+**Fecha:** 12 de Diciembre de 2024
+
+**Rol:** Eres un desarrollador de software especializado en accesibilidad web y experiencia de usuario.
+
+**Objetivo:** Corregir la pronunciación de números en euskera para el sistema TTS e implementar la funcionalidad de "Mi Perfil".
+
+---
+
+### Problemas Identificados
+
+1. **TTS siempre en castellano**: El sistema Text-to-Speech no respetaba el idioma seleccionado
+2. **Números en euskera mal pronunciados**: El TTS no pronunciaba correctamente los números en euskera
+3. **Botón "Mi Perfil" sin funcionalidad**: El menú de usuario tenía un botón que no hacía nada
+
+---
+
+### Implementación Realizada
+
+#### 1. Corrección del idioma TTS
+
+**Archivo modificado:** `audio.js`
+
+- Se actualizó la función `speak()` para usar el idioma de MathMasterI18n dinámicamente
+- Se añadió método `getText()` helper para obtener traducciones
+- Se actualizaron todas las funciones TTS para usar claves de traducción:
+  - `playCorrect()`, `playIncorrect()`, `playAchievement()`
+  - `playGameStart()`, `playGameComplete()`, `playStreak()`
+  - `speakQuestion()`, `speakResults()`
+- Se añadió listener para evento `languageChanged` para actualizar la voz
+
+#### 2. Conversión de números a palabras en euskera
+
+**Archivo modificado:** `audio.js`
+
+Se implementó un conversor de números a palabras en euskera que soporta:
+- Números del 0 al 9999+
+- Sistema vigesimal vasco (hogei, berrogei, hirurogei, laurogei)
+- Números negativos (ken)
+- Números decimales (koma)
+
+```javascript
+numberToBasque(num)      // Convierte número a palabras
+convertNumbersToBasque(text)  // Convierte todos los números en un texto
+```
+
+**Vocabulario implementado:**
+| Número | Euskera |
+|--------|---------|
+| 0-9 | zero, bat, bi, hiru, lau, bost, sei, zazpi, zortzi, bederatzi |
+| 10-19 | hamar, hamaika, hamabi, hamahiru, hamalau, hamabost, hamasei, hamazazpi, hemezortzi, hemeretzi |
+| 20, 40, 60, 80 | hogei, berrogei, hirurogei, laurogei |
+| 100, 1000 | ehun, mila |
+
+#### 3. Pantalla "Mi Perfil"
+
+**Archivos modificados:**
+- `index.html` - Nueva pantalla de perfil
+- `styles.css` - Estilos para el perfil
+- `game.js` - Función `showProfileScreen()` y event listeners
+- `i18n.js` - Traducciones para perfil en los 3 idiomas
+
+**Características de la pantalla:**
+- Información del usuario (nombre, fecha de creación, última actividad)
+- Estadísticas rápidas (partidas, precisión, mejor racha, logros)
+- Botones para ver estadísticas completas y logros
+- Diseño con gradiente y avatar
+
+#### 4. Nuevas claves de traducción en i18n.js
+
+**TTS Operaciones Matemáticas:**
+- `ttsMathTimes`, `ttsMathDividedBy`, `ttsMathPlus`, `ttsMathMinus`
+- `ttsMathEquals`, `ttsMathQuestionMark`, `ttsMathUnknownX`
+
+**Pantalla de Perfil:**
+- `lastActivity`, `quickStats`, `viewAllStats`, `viewAllAchievements`
+
+---
+
+## Historial de Cambios
+
+| Fecha | Versión | Descripción |
+|-------|---------|-------------|
+| 11/12/2024 | 1.0 | Creación inicial del juego: Modo Desafío por Puntuación Fija, 10 niveles, sistema de reintentos |
+| 11/12/2024 | 1.1 | Implementación de sistema de temas claro/oscuro con botón toggle |
+| 11/12/2024 | 2.0 | Sistema de accesibilidad (audio, alto contraste), cuentas de usuario, estadísticas y logros con IndexedDB |
+| 12/12/2024 | 2.1 | Internacionalización (i18n) con soporte para Castellano, English y Euskara |
+| 12/12/2024 | 2.2 | Corrección TTS multiidioma, conversor números a euskera, pantalla Mi Perfil |
+
+---
+
 ## Notas para Futuras Actualizaciones
 
 - Añadir modo supervivencia
@@ -348,3 +543,4 @@ Se implementó el sistema completo de accesibilidad, audio y progresión:
 - Sincronización en la nube (opcional)
 - Más logros y desafíos especiales
 - Tablas de clasificación locales
+- Añadir más idiomas (Catalán, Gallego, etc.)

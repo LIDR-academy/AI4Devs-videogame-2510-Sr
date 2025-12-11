@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="es" id="html-root">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MathMaster - Desafío Matemático</title>
+    <title>MathMaster</title>
     <link rel="stylesheet" href="styles.css">
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
 </head>
@@ -38,11 +38,11 @@
                     MathMaster
                     <span class="math-symbol">=</span>
                 </h1>
-                <p class="game-subtitle">Desafío por Puntuación Fija</p>
+                <p class="game-subtitle" data-i18n="appSubtitle">Desafío por Puntuación Fija</p>
             </header>
 
             <section class="login-section">
-                <h2 class="section-title">Selecciona o crea tu perfil</h2>
+                <h2 class="section-title" data-i18n="selectOrCreateProfile">Selecciona o crea tu perfil</h2>
 
                 <!-- Lista de usuarios existentes -->
                 <div class="users-list" id="users-list">
@@ -56,12 +56,13 @@
                         id="new-username"
                         class="username-input"
                         placeholder="Nombre del jugador"
+                        data-i18n-placeholder="playerNamePlaceholder"
                         maxlength="20"
                         autocomplete="off"
                     >
                     <button id="create-user-btn" class="action-button primary">
                         <span class="btn-icon">➕</span>
-                        Crear Perfil
+                        <span data-i18n="createProfile">Crear Perfil</span>
                     </button>
                 </div>
 
@@ -69,13 +70,13 @@
                 <div class="guest-option">
                     <button id="play-guest-btn" class="action-button secondary">
                         <span class="btn-icon">👤</span>
-                        Jugar como Invitado
+                        <span data-i18n="playAsGuest">Jugar como Invitado</span>
                     </button>
                 </div>
             </section>
 
             <footer class="game-footer">
-                <p>Desarrollado por EFC | MathMaster v2.0</p>
+                <p data-i18n="developedBy">Desarrollado por EFC | MathMaster v2.0</p>
             </footer>
         </div>
     </div>
@@ -90,39 +91,39 @@
                     MathMaster
                     <span class="math-symbol">=</span>
                 </h1>
-                <p class="game-subtitle">Desafío por Puntuación Fija</p>
+                <p class="game-subtitle" data-i18n="appSubtitle">Desafío por Puntuación Fija</p>
             </header>
 
             <!-- Selección de Operación -->
             <section class="selection-section">
-                <h2 class="section-title">Elige la Operación</h2>
+                <h2 class="section-title" data-i18n="chooseOperation">Elige la Operación</h2>
                 <div class="operation-buttons">
                     <button class="operation-btn" data-operation="suma">
                         <span class="op-symbol">+</span>
-                        <span class="op-name">Suma</span>
+                        <span class="op-name" data-i18n="operations.suma">Suma</span>
                     </button>
                     <button class="operation-btn" data-operation="resta">
                         <span class="op-symbol">−</span>
-                        <span class="op-name">Resta</span>
+                        <span class="op-name" data-i18n="operations.resta">Resta</span>
                     </button>
                     <button class="operation-btn" data-operation="multiplicacion">
                         <span class="op-symbol">×</span>
-                        <span class="op-name">Multiplicación</span>
+                        <span class="op-name" data-i18n="operations.multiplicacion">Multiplicación</span>
                     </button>
                     <button class="operation-btn" data-operation="division">
                         <span class="op-symbol">÷</span>
-                        <span class="op-name">División</span>
+                        <span class="op-name" data-i18n="operations.division">División</span>
                     </button>
                     <button class="operation-btn" data-operation="tablas">
                         <span class="op-symbol">T</span>
-                        <span class="op-name">Tablas</span>
+                        <span class="op-name" data-i18n="operations.tablas">Tablas</span>
                     </button>
                 </div>
             </section>
 
             <!-- Selección de Nivel de Dificultad -->
             <section class="selection-section" id="level-section">
-                <h2 class="section-title">Nivel de Dificultad</h2>
+                <h2 class="section-title" data-i18n="difficultyLevel">Nivel de Dificultad</h2>
                 <div class="level-buttons">
                     <button class="level-btn" data-level="1">1</button>
                     <button class="level-btn" data-level="2">2</button>
@@ -135,12 +136,12 @@
                     <button class="level-btn" data-level="9">9</button>
                     <button class="level-btn" data-level="10">10</button>
                 </div>
-                <p id="level-description" class="level-description">Selecciona un nivel para ver su descripción</p>
+                <p id="level-description" class="level-description" data-i18n="selectLevelDescription">Selecciona un nivel para ver su descripción</p>
             </section>
 
             <!-- Selección de Tabla (solo visible en modo tablas) -->
             <section class="selection-section hidden" id="table-section">
-                <h2 class="section-title">Tabla del...</h2>
+                <h2 class="section-title" data-i18n="tableOf">Tabla del...</h2>
                 <div class="table-buttons">
                     <button class="table-btn" data-table="1">1</button>
                     <button class="table-btn" data-table="2">2</button>
@@ -152,13 +153,13 @@
                     <button class="table-btn" data-table="8">8</button>
                     <button class="table-btn" data-table="9">9</button>
                     <button class="table-btn" data-table="10">10</button>
-                    <button class="table-btn table-todas" data-table="todas">Todas</button>
+                    <button class="table-btn table-todas" data-table="todas" data-i18n="allTables">Todas</button>
                 </div>
             </section>
 
             <!-- Selección de Cantidad de Preguntas -->
             <section class="selection-section">
-                <h2 class="section-title">Cantidad de Preguntas</h2>
+                <h2 class="section-title" data-i18n="questionCount">Cantidad de Preguntas</h2>
                 <div class="questions-buttons">
                     <button class="questions-btn" data-questions="20">20</button>
                     <button class="questions-btn selected" data-questions="30">30</button>
@@ -169,22 +170,22 @@
             <!-- Botón de Iniciar -->
             <button id="start-btn" class="start-button" disabled>
                 <span class="btn-icon">🎮</span>
-                <span class="btn-text">¡EMPEZAR!</span>
+                <span class="btn-text" data-i18n="start">¡EMPEZAR!</span>
             </button>
 
             <!-- Acceso Rápido -->
             <div class="quick-access">
                 <button id="stats-btn" class="quick-btn" title="Ver estadísticas">
-                    📊 Estadísticas
+                    📊 <span data-i18n="statistics">Estadísticas</span>
                 </button>
                 <button id="achievements-btn" class="quick-btn" title="Ver logros">
-                    🏆 Logros
+                    🏆 <span data-i18n="achievements">Logros</span>
                 </button>
             </div>
 
             <!-- Footer -->
             <footer class="game-footer">
-                <p>Desarrollado por EFC | MathMaster v2.0</p>
+                <p data-i18n="developedBy">Desarrollado por EFC | MathMaster v2.0</p>
             </footer>
         </div>
     </div>
@@ -198,15 +199,15 @@
             <!-- Barra Superior: Stats del Juego -->
             <header class="game-stats">
                 <div class="stat-item">
-                    <span class="stat-label">Tiempo</span>
+                    <span class="stat-label" data-i18n="time">Tiempo</span>
                     <span class="stat-value timer" id="timer">00:00</span>
                 </div>
                 <div class="stat-item score-item">
-                    <span class="stat-label">Puntuación</span>
+                    <span class="stat-label" data-i18n="score">Puntuación</span>
                     <span class="stat-value" id="score">0 / 30</span>
                 </div>
                 <div class="stat-item">
-                    <span class="stat-label">Racha</span>
+                    <span class="stat-label" data-i18n="streak">Racha</span>
                     <span class="stat-value streak" id="streak">🔥 0</span>
                 </div>
             </header>
@@ -233,10 +234,11 @@
                         id="answer-input"
                         class="answer-input"
                         placeholder="Tu respuesta"
+                        data-i18n-placeholder="yourAnswer"
                         autocomplete="off"
                         inputmode="decimal"
                     >
-                    <button id="submit-btn" class="submit-button">
+                    <button id="submit-btn" class="submit-button" data-i18n="verify">
                         Verificar
                     </button>
                 </div>
@@ -269,8 +271,8 @@
 
             <!-- Controles del Juego -->
             <div class="game-controls">
-                <button id="pause-btn" class="control-btn">⏸️ Pausar</button>
-                <button id="quit-btn" class="control-btn quit">🚪 Salir</button>
+                <button id="pause-btn" class="control-btn">⏸️ <span data-i18n="pause">Pausar</span></button>
+                <button id="quit-btn" class="control-btn quit">🚪 <span data-i18n="exit">Salir</span></button>
             </div>
         </div>
     </div>
@@ -278,11 +280,11 @@
     <!-- ==================== PANTALLA DE PAUSA ==================== -->
     <div id="pause-overlay" class="overlay hidden">
         <div class="overlay-content">
-            <h2>⏸️ Juego Pausado</h2>
-            <p class="pause-stats">Respuestas: <span id="pause-score">0</span> | Tiempo: <span id="pause-time">00:00</span></p>
-            <button id="resume-btn" class="action-button primary">▶️ Continuar</button>
-            <button id="restart-btn" class="action-button secondary">🔄 Reiniciar</button>
-            <button id="pause-quit-btn" class="action-button secondary">🏠 Menú Principal</button>
+            <h2>⏸️ <span data-i18n="gamePaused">Juego Pausado</span></h2>
+            <p class="pause-stats"><span data-i18n="answers">Respuestas</span>: <span id="pause-score">0</span> | <span data-i18n="time">Tiempo</span>: <span id="pause-time">00:00</span></p>
+            <button id="resume-btn" class="action-button primary">▶️ <span data-i18n="continue">Continuar</span></button>
+            <button id="restart-btn" class="action-button secondary">🔄 <span data-i18n="restart">Reiniciar</span></button>
+            <button id="pause-quit-btn" class="action-button secondary">🏠 <span data-i18n="mainMenu">Menú Principal</span></button>
         </div>
     </div>
 
@@ -297,39 +299,39 @@
             <!-- Estadísticas Finales -->
             <div class="results-stats">
                 <div class="result-stat main-stat">
-                    <span class="result-label">Respuestas Correctas</span>
+                    <span class="result-label" data-i18n="correctAnswers">Respuestas Correctas</span>
                     <span class="result-value" id="final-score">30 / 30</span>
                 </div>
                 <div class="result-stat">
-                    <span class="result-label">Tiempo Total</span>
+                    <span class="result-label" data-i18n="totalTime">Tiempo Total</span>
                     <span class="result-value" id="total-time">05:30</span>
                 </div>
                 <div class="result-stat">
-                    <span class="result-label">Mejor Racha</span>
+                    <span class="result-label" data-i18n="bestStreak">Mejor Racha</span>
                     <span class="result-value" id="best-streak">15</span>
                 </div>
                 <div class="result-stat">
-                    <span class="result-label">Precisión</span>
+                    <span class="result-label" data-i18n="precision">Precisión</span>
                     <span class="result-value" id="accuracy">100%</span>
                 </div>
                 <div class="result-stat">
-                    <span class="result-label">Intentos Totales</span>
+                    <span class="result-label" data-i18n="totalAttempts">Intentos Totales</span>
                     <span class="result-value" id="total-attempts">30</span>
                 </div>
                 <div class="result-stat">
-                    <span class="result-label">Promedio por Pregunta</span>
+                    <span class="result-label" data-i18n="avgPerQuestion">Promedio por Pregunta</span>
                     <span class="result-value" id="avg-time">11s</span>
                 </div>
             </div>
 
             <!-- Récord Personal -->
             <div class="record-section hidden" id="record-section">
-                <span class="record-badge">🌟 ¡Nuevo Récord de Tiempo!</span>
+                <span class="record-badge">🌟 <span data-i18n="newTimeRecord">¡Nuevo Récord de Tiempo!</span></span>
             </div>
 
             <!-- Logros Desbloqueados -->
             <div class="unlocked-achievements hidden" id="unlocked-achievements">
-                <h3>🏆 Logros Desbloqueados</h3>
+                <h3>🏆 <span data-i18n="achievementsUnlocked">Logros Desbloqueados</span></h3>
                 <div class="achievements-list" id="results-achievements-list">
                     <!-- Se llena dinámicamente -->
                 </div>
@@ -339,11 +341,11 @@
             <div class="results-actions">
                 <button id="retry-btn" class="action-button primary">
                     <span class="btn-icon">🔄</span>
-                    Jugar de Nuevo
+                    <span data-i18n="playAgain">Jugar de Nuevo</span>
                 </button>
                 <button id="menu-btn" class="action-button secondary">
                     <span class="btn-icon">🏠</span>
-                    Menú Principal
+                    <span data-i18n="mainMenu">Menú Principal</span>
                 </button>
             </div>
         </div>
@@ -353,41 +355,41 @@
     <div id="stats-screen" class="screen">
         <div class="container">
             <header class="screen-header">
-                <button class="back-btn" id="stats-back-btn">← Volver</button>
-                <h2>📊 Estadísticas</h2>
+                <button class="back-btn" id="stats-back-btn">← <span data-i18n="back">Volver</span></button>
+                <h2>📊 <span data-i18n="statistics">Estadísticas</span></h2>
             </header>
 
             <div class="stats-content" id="stats-content">
                 <!-- Estadísticas Generales -->
                 <section class="stats-section">
-                    <h3>Resumen General</h3>
+                    <h3 data-i18n="generalSummary">Resumen General</h3>
                     <div class="stats-grid">
                         <div class="stat-card">
                             <span class="stat-card-value" id="stat-total-games">0</span>
-                            <span class="stat-card-label">Partidas Jugadas</span>
+                            <span class="stat-card-label" data-i18n="gamesPlayed">Partidas Jugadas</span>
                         </div>
                         <div class="stat-card">
                             <span class="stat-card-value" id="stat-total-correct">0</span>
-                            <span class="stat-card-label">Respuestas Correctas</span>
+                            <span class="stat-card-label" data-i18n="correctAnswersTotal">Respuestas Correctas</span>
                         </div>
                         <div class="stat-card">
                             <span class="stat-card-value" id="stat-accuracy">0%</span>
-                            <span class="stat-card-label">Precisión Global</span>
+                            <span class="stat-card-label" data-i18n="globalPrecision">Precisión Global</span>
                         </div>
                         <div class="stat-card">
                             <span class="stat-card-value" id="stat-best-streak">0</span>
-                            <span class="stat-card-label">Mejor Racha</span>
+                            <span class="stat-card-label" data-i18n="bestStreak">Mejor Racha</span>
                         </div>
                         <div class="stat-card">
                             <span class="stat-card-value" id="stat-total-time">0h 0m</span>
-                            <span class="stat-card-label">Tiempo Total</span>
+                            <span class="stat-card-label" data-i18n="totalTimeSpent">Tiempo Total</span>
                         </div>
                     </div>
                 </section>
 
                 <!-- Por Operación -->
                 <section class="stats-section">
-                    <h3>Por Operación</h3>
+                    <h3 data-i18n="byOperation">Por Operación</h3>
                     <div class="operation-stats" id="operation-stats">
                         <!-- Se llena dinámicamente -->
                     </div>
@@ -400,8 +402,8 @@
     <div id="achievements-screen" class="screen">
         <div class="container">
             <header class="screen-header">
-                <button class="back-btn" id="achievements-back-btn">← Volver</button>
-                <h2>🏆 Logros</h2>
+                <button class="back-btn" id="achievements-back-btn">← <span data-i18n="back">Volver</span></button>
+                <h2>🏆 <span data-i18n="achievements">Logros</span></h2>
             </header>
 
             <div class="achievements-content" id="achievements-content">
@@ -410,23 +412,84 @@
         </div>
     </div>
 
+    <!-- ==================== PANTALLA DE PERFIL ==================== -->
+    <div id="profile-screen" class="screen">
+        <div class="container">
+            <header class="screen-header">
+                <button class="back-btn" id="profile-back-btn">← <span data-i18n="back">Volver</span></button>
+                <h2>👤 <span data-i18n="myProfile">Mi Perfil</span></h2>
+            </header>
+
+            <div class="profile-content" id="profile-content">
+                <!-- Información básica del perfil -->
+                <section class="profile-section profile-header-section">
+                    <div class="profile-avatar">👤</div>
+                    <div class="profile-info">
+                        <h3 class="profile-username" id="profile-username">Usuario</h3>
+                        <div class="profile-meta">
+                            <span class="profile-meta-item">
+                                📅 <span data-i18n="created">Creado</span>: <span id="profile-created">-</span>
+                            </span>
+                            <span class="profile-meta-item">
+                                🕐 <span data-i18n="lastActivity">Última actividad</span>: <span id="profile-last-login">-</span>
+                            </span>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Resumen de estadísticas -->
+                <section class="profile-section">
+                    <h3 data-i18n="quickStats">Resumen Rápido</h3>
+                    <div class="profile-stats-grid">
+                        <div class="profile-stat-card">
+                            <span class="profile-stat-value" id="profile-total-games">0</span>
+                            <span class="profile-stat-label" data-i18n="gamesPlayed">Partidas Jugadas</span>
+                        </div>
+                        <div class="profile-stat-card">
+                            <span class="profile-stat-value" id="profile-accuracy">0%</span>
+                            <span class="profile-stat-label" data-i18n="globalPrecision">Precisión Global</span>
+                        </div>
+                        <div class="profile-stat-card">
+                            <span class="profile-stat-value" id="profile-best-streak">0</span>
+                            <span class="profile-stat-label" data-i18n="bestStreak">Mejor Racha</span>
+                        </div>
+                        <div class="profile-stat-card">
+                            <span class="profile-stat-value" id="profile-achievements">0/0</span>
+                            <span class="profile-stat-label" data-i18n="achievements">Logros</span>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Acciones del perfil -->
+                <section class="profile-section profile-actions">
+                    <button class="btn btn-outline" id="profile-view-stats">
+                        📊 <span data-i18n="viewAllStats">Ver Estadísticas Completas</span>
+                    </button>
+                    <button class="btn btn-outline" id="profile-view-achievements">
+                        🏆 <span data-i18n="viewAllAchievements">Ver Todos los Logros</span>
+                    </button>
+                </section>
+            </div>
+        </div>
+    </div>
+
     <!-- ==================== MODAL DE CONFIGURACIÓN ==================== -->
     <div id="settings-modal" class="modal hidden">
         <div class="modal-content">
             <header class="modal-header">
-                <h2>⚙️ Configuración</h2>
-                <button class="close-modal-btn" id="close-settings-btn" aria-label="Cerrar">✕</button>
+                <h2>⚙️ <span data-i18n="settings">Configuración</span></h2>
+                <button class="close-modal-btn" id="close-settings-btn" aria-label="Cerrar" data-i18n-aria="close">✕</button>
             </header>
 
             <div class="settings-content">
                 <!-- Audio -->
                 <section class="settings-section">
-                    <h3>🔊 Audio</h3>
+                    <h3 data-i18n="audio">🔊 Audio</h3>
 
                     <div class="setting-item">
                         <label class="setting-label">
-                            <span>Efectos de Sonido</span>
-                            <span class="setting-description">Sonidos para aciertos, errores y logros</span>
+                            <span data-i18n="soundEffects">Efectos de Sonido</span>
+                            <span class="setting-description" data-i18n="soundEffectsDesc">Sonidos para aciertos, errores y logros</span>
                         </label>
                         <label class="toggle-switch">
                             <input type="checkbox" id="setting-sound" checked>
@@ -436,15 +499,15 @@
 
                     <div class="setting-item">
                         <label class="setting-label">
-                            <span>Volumen</span>
+                            <span data-i18n="volume">Volumen</span>
                         </label>
                         <input type="range" id="setting-volume" min="0" max="100" value="80" class="volume-slider">
                     </div>
 
                     <div class="setting-item">
                         <label class="setting-label">
-                            <span>Lectura en Voz Alta (TTS)</span>
-                            <span class="setting-description">Lee las preguntas y resultados</span>
+                            <span data-i18n="textToSpeech">Lectura en Voz Alta (TTS)</span>
+                            <span class="setting-description" data-i18n="textToSpeechDesc">Lee las preguntas y resultados</span>
                         </label>
                         <label class="toggle-switch">
                             <input type="checkbox" id="setting-tts">
@@ -455,12 +518,12 @@
 
                 <!-- Accesibilidad -->
                 <section class="settings-section">
-                    <h3>♿ Accesibilidad</h3>
+                    <h3 data-i18n="accessibility">♿ Accesibilidad</h3>
 
                     <div class="setting-item">
                         <label class="setting-label">
-                            <span>Modo Alto Contraste</span>
-                            <span class="setting-description">Mejora la visibilidad para personas con dificultades visuales</span>
+                            <span data-i18n="highContrastMode">Modo Alto Contraste</span>
+                            <span class="setting-description" data-i18n="highContrastDesc">Mejora la visibilidad para personas con dificultades visuales</span>
                         </label>
                         <label class="toggle-switch">
                             <input type="checkbox" id="setting-high-contrast">
@@ -469,24 +532,50 @@
                     </div>
                 </section>
 
-                <!-- Cuenta -->
-                <section class="settings-section" id="account-settings">
-                    <h3>👤 Cuenta</h3>
+                <!-- Idioma -->
+                <section class="settings-section">
+                    <h3 data-i18n="language">🌐 Idioma</h3>
 
                     <div class="setting-item">
                         <label class="setting-label">
-                            <span>Usuario Actual</span>
-                            <span class="setting-description" id="settings-current-user">Invitado</span>
+                            <span data-i18n="language">Idioma</span>
+                            <span class="setting-description" data-i18n="languageDesc">Selecciona el idioma de la interfaz</span>
                         </label>
-                        <button class="setting-btn" id="change-user-btn">Cambiar</button>
+                        <div class="language-selector" id="language-selector">
+                            <button class="lang-btn" data-lang="es-ES" title="Castellano">
+                                <span class="lang-flag">🇪🇸</span>
+                                <span class="lang-name">ES</span>
+                            </button>
+                            <button class="lang-btn" data-lang="en-US" title="English">
+                                <span class="lang-flag">🇺🇸</span>
+                                <span class="lang-name">EN</span>
+                            </button>
+                            <button class="lang-btn" data-lang="eu-ES" title="Euskara">
+                                <span class="lang-flag">🏴</span>
+                                <span class="lang-name">EU</span>
+                            </button>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Cuenta -->
+                <section class="settings-section" id="account-settings">
+                    <h3 data-i18n="account">👤 Cuenta</h3>
+
+                    <div class="setting-item">
+                        <label class="setting-label">
+                            <span data-i18n="currentUser">Usuario Actual</span>
+                            <span class="setting-description" id="settings-current-user" data-i18n="guest">Invitado</span>
+                        </label>
+                        <button class="setting-btn" id="change-user-btn" data-i18n="change">Cambiar</button>
                     </div>
 
                     <div class="setting-item danger-zone hidden" id="delete-account-section">
                         <label class="setting-label">
-                            <span>Eliminar Cuenta</span>
-                            <span class="setting-description">Esta acción no se puede deshacer</span>
+                            <span data-i18n="deleteAccount">Eliminar Cuenta</span>
+                            <span class="setting-description" data-i18n="deleteAccountDesc">Esta acción no se puede deshacer</span>
                         </label>
-                        <button class="setting-btn danger" id="delete-account-btn">Eliminar</button>
+                        <button class="setting-btn danger" id="delete-account-btn" data-i18n="delete">Eliminar</button>
                     </div>
                 </section>
             </div>
@@ -496,22 +585,22 @@
     <!-- ==================== MODAL DE CONFIRMACIÓN ==================== -->
     <div id="confirm-modal" class="modal hidden">
         <div class="modal-content modal-small">
-            <h3 id="confirm-title">¿Estás seguro?</h3>
-            <p id="confirm-message">Esta acción no se puede deshacer.</p>
+            <h3 id="confirm-title" data-i18n="areYouSure">¿Estás seguro?</h3>
+            <p id="confirm-message" data-i18n="actionCannotBeUndone">Esta acción no se puede deshacer.</p>
             <div class="modal-actions">
-                <button class="action-button secondary" id="confirm-cancel-btn">Cancelar</button>
-                <button class="action-button danger" id="confirm-ok-btn">Confirmar</button>
+                <button class="action-button secondary" id="confirm-cancel-btn" data-i18n="cancel">Cancelar</button>
+                <button class="action-button danger" id="confirm-ok-btn" data-i18n="confirm">Confirmar</button>
             </div>
         </div>
     </div>
 
     <!-- ==================== MENÚ DE USUARIO ==================== -->
     <div id="user-menu" class="dropdown-menu hidden">
-        <button class="menu-item" id="menu-profile">👤 Mi Perfil</button>
-        <button class="menu-item" id="menu-stats">📊 Estadísticas</button>
-        <button class="menu-item" id="menu-achievements">🏆 Logros</button>
+        <button class="menu-item" id="menu-profile">👤 <span data-i18n="myProfile">Mi Perfil</span></button>
+        <button class="menu-item" id="menu-stats">📊 <span data-i18n="statistics">Estadísticas</span></button>
+        <button class="menu-item" id="menu-achievements">🏆 <span data-i18n="achievements">Logros</span></button>
         <hr class="menu-divider">
-        <button class="menu-item" id="menu-logout">🚪 Cerrar Sesión</button>
+        <button class="menu-item" id="menu-logout">🚪 <span data-i18n="logout">Cerrar Sesión</span></button>
     </div>
 
     <!-- ==================== CONTENEDOR DE NOTIFICACIONES ==================== -->
@@ -522,6 +611,7 @@
     <!-- Scripts del Juego -->
     <script src="database.js"></script>
     <script src="audio.js"></script>
+    <script src="i18n.js"></script>
     <script src="achievements.js"></script>
     <script src="game.js"></script>
 </body>

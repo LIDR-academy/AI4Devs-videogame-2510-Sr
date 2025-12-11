@@ -51,13 +51,31 @@ const MathMasterAudio = {
         if ('speechSynthesis' in window) {
             // Esperar a que las voces estén disponibles
             window.speechSynthesis.onvoiceschanged = () => {
-                const voices = window.speechSynthesis.getVoices();
-                // Buscar voz en español
-                this.ttsVoice = voices.find(v => v.lang.startsWith('es')) || voices[0];
+                this.updateTTSVoice();
             };
             // Forzar carga de voces
             window.speechSynthesis.getVoices();
         }
+    },
+
+    /**
+     * Actualiza la voz de TTS según el idioma seleccionado
+     */
+    updateTTSVoice() {
+        if (!('speechSynthesis' in window)) return;
+
+        const voices = window.speechSynthesis.getVoices();
+        const currentLang = typeof MathMasterI18n !== 'undefined'
+            ? MathMasterI18n.getCurrentLanguage()
+            : 'es-ES';
+
+        // Mapeo de idiomas a códigos de voz
+        const langCode = currentLang.split('-')[0]; // 'es', 'en', 'eu'
+
+        // Buscar voz para el idioma actual
+        this.ttsVoice = voices.find(v => v.lang.startsWith(langCode)) ||
+                        voices.find(v => v.lang.startsWith('es')) ||
+                        voices[0];
     },
 
     /**
@@ -82,6 +100,108 @@ const MathMasterAudio = {
             sfxVolume: this.sfxVolume,
             ttsEnabled: this.ttsEnabled
         }));
+    },
+
+    // ==================== HELPERS ====================
+
+    /**
+     * Obtiene texto traducido del sistema i18n
+     * @param {string} key - Clave de traducción
+     * @param {string} fallback - Texto por defecto si no hay traducción
+     * @param {Object} params - Parámetros para interpolación
+     * @returns {string} Texto traducido
+     */
+    getText(key, fallback, params = {}) {
+        if (typeof MathMasterI18n !== 'undefined') {
+            return MathMasterI18n.t(key, params);
+        }
+        return fallback;
+    },
+
+    /**
+     * Convierte un número a palabras en euskera
+     * @param {number} num - Número a convertir
+     * @returns {string} Número en palabras en euskera
+     */
+    numberToBasque(num) {
+        if (num === null || num === undefined || isNaN(num)) return '';
+
+        // Manejar negativos
+        if (num < 0) {
+            return 'ken ' + this.numberToBasque(Math.abs(num));
+        }
+
+        // Manejar decimales
+        if (!Number.isInteger(num)) {
+            const parts = num.toString().split('.');
+            const intPart = this.numberToBasque(parseInt(parts[0]));
+            const decPart = parts[1].split('').map(d => this.numberToBasque(parseInt(d))).join(' ');
+            return intPart + ' koma ' + decPart;
+        }
+
+        const units = ['zero', 'bat', 'bi', 'hiru', 'lau', 'bost', 'sei', 'zazpi', 'zortzi', 'bederatzi'];
+        const teens = ['hamar', 'hamaika', 'hamabi', 'hamahiru', 'hamalau', 'hamabost', 'hamasei', 'hamazazpi', 'hemezortzi', 'hemeretzi'];
+
+        if (num < 10) return units[num];
+        if (num < 20) return teens[num - 10];
+
+        // 20-99 (sistema vigesimal vasco)
+        if (num < 100) {
+            const twenties = Math.floor(num / 20);
+            const remainder = num % 20;
+
+            let base;
+            if (twenties === 1) base = 'hogei';
+            else if (twenties === 2) base = 'berrogei';
+            else if (twenties === 3) base = 'hirurogei';
+            else if (twenties === 4) base = 'laurogei';
+
+            if (remainder === 0) return base;
+            if (remainder < 10) return base + 'ta ' + units[remainder];
+            return base + 'ta ' + teens[remainder - 10];
+        }
+
+        // 100-999
+        if (num < 1000) {
+            const hundreds = Math.floor(num / 100);
+            const remainder = num % 100;
+
+            let base;
+            if (hundreds === 1) base = 'ehun';
+            else base = units[hundreds] + ' ehun';
+
+            if (remainder === 0) return base;
+            return base + ' eta ' + this.numberToBasque(remainder);
+        }
+
+        // 1000+
+        if (num < 10000) {
+            const thousands = Math.floor(num / 1000);
+            const remainder = num % 1000;
+
+            let base;
+            if (thousands === 1) base = 'mila';
+            else base = units[thousands] + ' mila';
+
+            if (remainder === 0) return base;
+            return base + ' ' + this.numberToBasque(remainder);
+        }
+
+        // Para números muy grandes, devolver el número como string
+        return num.toString();
+    },
+
+    /**
+     * Convierte números en un texto a palabras en euskera
+     * @param {string} text - Texto con números
+     * @returns {string} Texto con números en palabras
+     */
+    convertNumbersToBasque(text) {
+        // Reemplazar números (incluyendo decimales y negativos) por sus equivalentes en euskera
+        return text.replace(/-?\d+\.?\d*/g, (match) => {
+            const num = parseFloat(match);
+            return this.numberToBasque(num);
+        });
     },
 
     // ==================== CONTROLES ====================
@@ -126,7 +246,8 @@ const MathMasterAudio = {
         this.playTone([523.25, 659.25, 783.99], [0, 0.1, 0.2], 0.15, 'sine');
 
         if (this.ttsEnabled) {
-            this.speak('Correcto');
+            const text = this.getText('ttsCorrect', 'Correct');
+            this.speak(text);
         }
     },
 
@@ -141,7 +262,8 @@ const MathMasterAudio = {
         this.playTone([311.13, 233.08], [0, 0.15], 0.2, 'sawtooth', 0.3);
 
         if (this.ttsEnabled) {
-            this.speak('Incorrecto, intenta de nuevo');
+            const text = this.getText('ttsIncorrect', 'Incorrect, try again');
+            this.speak(text);
         }
     },
 
@@ -183,7 +305,8 @@ const MathMasterAudio = {
         );
 
         if (this.ttsEnabled) {
-            setTimeout(() => this.speak('Logro desbloqueado'), 600);
+            const text = this.getText('ttsAchievementUnlocked', 'Achievement unlocked');
+            setTimeout(() => this.speak(text), 600);
         }
     },
 
@@ -198,7 +321,8 @@ const MathMasterAudio = {
         this.playTone([392, 523.25, 659.25], [0, 0.1, 0.2], 0.15, 'sine');
 
         if (this.ttsEnabled) {
-            this.speak('Juego iniciado');
+            const text = this.getText('ttsGameStarted', 'Game started');
+            this.speak(text);
         }
     },
 
@@ -218,7 +342,8 @@ const MathMasterAudio = {
         );
 
         if (this.ttsEnabled) {
-            setTimeout(() => this.speak('Felicitaciones, has completado el desafío'), 1000);
+            const text = this.getText('ttsGameCompleted', 'Congratulations, you completed the challenge');
+            setTimeout(() => this.speak(text), 1000);
         }
     },
 
@@ -235,7 +360,8 @@ const MathMasterAudio = {
         this.playTone([baseFreq, baseFreq * 1.25], [0, 0.08], 0.1, 'sine');
 
         if (this.ttsEnabled && streak % 5 === 0) {
-            this.speak(`Racha de ${streak}`);
+            const text = this.getText('ttsStreak', `Streak of ${streak}`, { streak });
+            this.speak(text);
         }
     },
 
@@ -290,8 +416,13 @@ const MathMasterAudio = {
             window.speechSynthesis.cancel();
         }
 
+        // Obtener idioma actual del sistema i18n
+        const currentLang = typeof MathMasterI18n !== 'undefined'
+            ? MathMasterI18n.getCurrentLanguage()
+            : 'es-ES';
+
         const utterance = new SpeechSynthesisUtterance(text);
-        utterance.lang = 'es-ES';
+        utterance.lang = currentLang;
         utterance.rate = 1.1;
         utterance.pitch = 1;
         utterance.volume = this.sfxVolume;
@@ -310,15 +441,34 @@ const MathMasterAudio = {
     speakQuestion(question) {
         if (!this.ttsEnabled) return;
 
+        // Obtener idioma actual
+        const currentLang = typeof MathMasterI18n !== 'undefined'
+            ? MathMasterI18n.getCurrentLanguage()
+            : 'es-ES';
+
+        // Obtener palabras traducidas para operaciones matemáticas
+        const times = this.getText('ttsMathTimes', 'times');
+        const dividedBy = this.getText('ttsMathDividedBy', 'divided by');
+        const plus = this.getText('ttsMathPlus', 'plus');
+        const minus = this.getText('ttsMathMinus', 'minus');
+        const equals = this.getText('ttsMathEquals', 'equals');
+        const questionMark = this.getText('ttsMathQuestionMark', 'question mark');
+        const unknownX = this.getText('ttsMathUnknownX', 'X');
+
         // Formatear la pregunta para lectura
         let readable = question
-            .replace(/×/g, ' por ')
-            .replace(/÷/g, ' dividido ')
-            .replace(/\+/g, ' más ')
-            .replace(/−/g, ' menos ')
-            .replace(/=/g, ' igual a ')
-            .replace(/\?/g, ' interrogación')
-            .replace(/X/g, ' equis ');
+            .replace(/×/g, ` ${times} `)
+            .replace(/÷/g, ` ${dividedBy} `)
+            .replace(/\+/g, ` ${plus} `)
+            .replace(/−/g, ` ${minus} `)
+            .replace(/=/g, ` ${equals} `)
+            .replace(/\?/g, ` ${questionMark}`)
+            .replace(/X/g, ` ${unknownX} `);
+
+        // Para euskera, convertir números a palabras
+        if (currentLang === 'eu-ES') {
+            readable = this.convertNumbersToBasque(readable);
+        }
 
         this.speak(readable);
     },
@@ -330,9 +480,15 @@ const MathMasterAudio = {
     speakResults(results) {
         if (!this.ttsEnabled) return;
 
-        const text = `Has completado el desafío con ${results.correctAnswers} respuestas correctas ` +
-            `en ${Math.floor(results.elapsedSeconds / 60)} minutos y ${results.elapsedSeconds % 60} segundos. ` +
-            `Tu precisión fue del ${results.accuracy} por ciento.`;
+        const text = this.getText('ttsResults',
+            `You completed the challenge with ${results.correctAnswers} correct answers in ${Math.floor(results.elapsedSeconds / 60)} minutes and ${results.elapsedSeconds % 60} seconds. Your accuracy was ${results.accuracy} percent.`,
+            {
+                correct: results.correctAnswers,
+                minutes: Math.floor(results.elapsedSeconds / 60),
+                seconds: results.elapsedSeconds % 60,
+                accuracy: results.accuracy
+            }
+        );
 
         setTimeout(() => this.speak(text, false), 1500);
     },
@@ -356,6 +512,11 @@ document.addEventListener('DOMContentLoaded', () => {
 document.addEventListener('click', () => {
     MathMasterAudio.activate();
 }, { once: true });
+
+// Actualizar voz TTS cuando cambie el idioma
+document.addEventListener('languageChanged', () => {
+    MathMasterAudio.updateTTSVoice();
+});
 
 // Exportar para uso en otros módulos
 if (typeof module !== 'undefined' && module.exports) {

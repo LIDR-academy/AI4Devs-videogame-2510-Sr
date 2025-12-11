@@ -99,15 +99,7 @@ const LEVEL_CONFIG = {
     }
 };
 
-// Nombres de operaciones para mostrar
-const OPERATION_NAMES = {
-    suma: 'Suma',
-    resta: 'Resta',
-    multiplicacion: 'Multiplicación',
-    division: 'División',
-    tablas: 'Tablas de Multiplicar'
-};
-
+// Iconos de operaciones
 const OPERATION_ICONS = {
     suma: '+',
     resta: '−',
@@ -115,6 +107,22 @@ const OPERATION_ICONS = {
     division: '÷',
     tablas: 'T'
 };
+
+// Función helper para obtener nombres de operaciones traducidos
+function getOperationName(operation) {
+    if (typeof MathMasterI18n !== 'undefined') {
+        return MathMasterI18n.getOperationName(operation);
+    }
+    // Fallback en caso de que i18n no esté disponible
+    const names = {
+        suma: 'Suma',
+        resta: 'Resta',
+        multiplicacion: 'Multiplicación',
+        division: 'División',
+        tablas: 'Tablas de Multiplicar'
+    };
+    return names[operation] || operation;
+}
 
 // ==================== ESTADO DE LA APLICACIÓN ====================
 
@@ -259,6 +267,19 @@ function initDOM() {
     DOM.menuAchievements = document.getElementById('menu-achievements');
     DOM.menuLogout = document.getElementById('menu-logout');
 
+    // Pantalla de perfil
+    DOM.profileScreen = document.getElementById('profile-screen');
+    DOM.profileBackBtn = document.getElementById('profile-back-btn');
+    DOM.profileUsername = document.getElementById('profile-username');
+    DOM.profileCreated = document.getElementById('profile-created');
+    DOM.profileLastLogin = document.getElementById('profile-last-login');
+    DOM.profileTotalGames = document.getElementById('profile-total-games');
+    DOM.profileAccuracy = document.getElementById('profile-accuracy');
+    DOM.profileBestStreak = document.getElementById('profile-best-streak');
+    DOM.profileAchievements = document.getElementById('profile-achievements');
+    DOM.profileViewStats = document.getElementById('profile-view-stats');
+    DOM.profileViewAchievements = document.getElementById('profile-view-achievements');
+
     // Confirmación
     DOM.confirmTitle = document.getElementById('confirm-title');
     DOM.confirmMessage = document.getElementById('confirm-message');
@@ -286,8 +307,84 @@ async function init() {
     loadSettings();
     loadRecords();
 
+    // Inicializar selector de idioma
+    initLanguageSelector();
+
+    // Escuchar cambios de idioma
+    document.addEventListener('languageChanged', onLanguageChanged);
+
     // Mostrar usuarios existentes en login
     await refreshUsersList();
+}
+
+/**
+ * Inicializa el selector de idioma
+ */
+function initLanguageSelector() {
+    const langSelector = document.getElementById('language-selector');
+    if (!langSelector) return;
+
+    // Marcar el idioma actual como seleccionado
+    updateLanguageSelectorUI();
+
+    // Agregar listeners a los botones de idioma
+    langSelector.querySelectorAll('.lang-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const lang = btn.dataset.lang;
+            if (MathMasterI18n.setLanguage(lang)) {
+                MathMasterAudio.playClick();
+            }
+        });
+    });
+}
+
+/**
+ * Actualiza la UI del selector de idioma
+ */
+function updateLanguageSelectorUI() {
+    const langSelector = document.getElementById('language-selector');
+    if (!langSelector) return;
+
+    const currentLang = MathMasterI18n.getCurrentLanguage();
+    langSelector.querySelectorAll('.lang-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.lang === currentLang);
+    });
+}
+
+/**
+ * Handler para cambios de idioma
+ */
+function onLanguageChanged(e) {
+    updateLanguageSelectorUI();
+
+    // Actualizar textos dinámicos que no tienen data-i18n
+    updateDynamicTexts();
+
+    // Refrescar lista de usuarios si estamos en login
+    if (DOM.loginScreen?.classList.contains('active')) {
+        refreshUsersList();
+    }
+}
+
+/**
+ * Actualiza textos dinámicos que no usan data-i18n
+ */
+function updateDynamicTexts() {
+    // Actualizar descripción de nivel si hay uno seleccionado
+    if (gameState.level && DOM.levelDescription) {
+        const levelInfo = MathMasterI18n.getLevelInfo(gameState.level);
+        if (levelInfo && levelInfo.description) {
+            DOM.levelDescription.textContent = levelInfo.description;
+        }
+    }
+
+    // Actualizar indicador de operación si estamos en juego
+    if (gameState.isPlaying) {
+        updateOperationIndicator();
+    }
+
+    // Actualizar badge de usuario
+    updateUserBadge();
 }
 
 function setupEventListeners() {
@@ -305,6 +402,10 @@ function setupEventListeners() {
     DOM.userMenuBtn?.addEventListener('click', toggleUserMenu);
 
     // === Menú de usuario ===
+    DOM.menuProfile?.addEventListener('click', () => {
+        hideUserMenu();
+        showProfileScreen();
+    });
     DOM.menuStats?.addEventListener('click', () => {
         hideUserMenu();
         showStatsScreen();
@@ -316,6 +417,17 @@ function setupEventListeners() {
     DOM.menuLogout?.addEventListener('click', () => {
         hideUserMenu();
         logout();
+    });
+
+    // === Pantalla de perfil ===
+    DOM.profileBackBtn?.addEventListener('click', () => {
+        showScreen('selection');
+    });
+    DOM.profileViewStats?.addEventListener('click', () => {
+        showStatsScreen();
+    });
+    DOM.profileViewAchievements?.addEventListener('click', () => {
+        showAchievementsScreen();
     });
 
     // === Cerrar menú al hacer clic fuera ===
@@ -442,11 +554,14 @@ async function refreshUsersList() {
 
     try {
         const users = await MathMasterDB.getAllUsers();
+        const t = (key, params) => MathMasterI18n.t(key, params);
+        const currentLang = MathMasterI18n.getCurrentLanguage();
+        const locale = currentLang === 'eu-ES' ? 'eu' : currentLang;
 
         if (users.length === 0) {
             DOM.usersList.innerHTML = `
                 <div class="no-users-message">
-                    <p>No hay perfiles guardados</p>
+                    <p>${t('noSavedProfiles')}</p>
                 </div>
             `;
         } else {
@@ -456,10 +571,10 @@ async function refreshUsersList() {
                         <span class="user-card-avatar">👤</span>
                         <div>
                             <div class="user-card-name">${escapeHtml(user.username)}</div>
-                            <div class="user-card-stats">Creado: ${new Date(user.createdAt).toLocaleDateString('es-ES')}</div>
+                            <div class="user-card-stats">${t('created')}: ${new Date(user.createdAt).toLocaleDateString(locale)}</div>
                         </div>
                     </div>
-                    <button class="user-card-delete" data-user-id="${user.odId}" title="Eliminar perfil">🗑️</button>
+                    <button class="user-card-delete" data-user-id="${user.odId}" title="${t('deleteProfile')}">🗑️</button>
                 </div>
             `).join('');
 
@@ -489,14 +604,15 @@ async function refreshUsersList() {
 
 async function createNewUser() {
     const username = DOM.newUsernameInput.value.trim();
+    const t = (key) => MathMasterI18n.t(key);
 
     if (!username) {
-        alert('Por favor, ingresa un nombre de usuario');
+        alert(t('enterUsername'));
         return;
     }
 
     if (username.length < 2 || username.length > 20) {
-        alert('El nombre debe tener entre 2 y 20 caracteres');
+        alert(t('usernameLengthError'));
         return;
     }
 
@@ -512,7 +628,7 @@ async function createNewUser() {
         await loginUser(userId);
     } catch (e) {
         if (e.name === 'ConstraintError') {
-            alert('Ya existe un usuario con ese nombre');
+            alert(t('usernameExists'));
         } else {
             console.error('Error creando usuario:', e);
             playAsGuest();
@@ -564,6 +680,7 @@ function logout() {
 
 function updateUserBadge() {
     if (!DOM.userBadge) return;
+    const t = (key) => MathMasterI18n.t(key);
 
     if (appState.currentUser) {
         DOM.userBadge.classList.remove('hidden');
@@ -576,9 +693,9 @@ function updateUserBadge() {
         }
     } else if (appState.isGuest) {
         DOM.userBadge.classList.remove('hidden');
-        DOM.currentUserName.textContent = 'Invitado';
+        DOM.currentUserName.textContent = t('guest');
         if (DOM.settingsCurrentUser) {
-            DOM.settingsCurrentUser.textContent = 'Invitado (sin guardar progreso)';
+            DOM.settingsCurrentUser.textContent = t('guestNoProgress');
         }
         if (DOM.deleteAccountSection) {
             DOM.deleteAccountSection.classList.add('hidden');
@@ -606,10 +723,11 @@ function hideUserMenu() {
 async function confirmDeleteUser(userId) {
     const user = await MathMasterDB.getUser(userId);
     if (!user) return;
+    const t = (key, params) => MathMasterI18n.t(key, params);
 
     showConfirmModal(
-        '¿Eliminar perfil?',
-        `Se eliminará permanentemente el perfil "${user.username}" y todos sus datos.`,
+        t('deleteProfileConfirmTitle'),
+        t('deleteProfileConfirmMessage', { username: user.username }),
         async () => {
             await MathMasterDB.deleteUser(userId);
             await refreshUsersList();
@@ -619,10 +737,11 @@ async function confirmDeleteUser(userId) {
 
 function confirmDeleteAccount() {
     if (!appState.currentUser) return;
+    const t = (key) => MathMasterI18n.t(key);
 
     showConfirmModal(
-        '¿Eliminar tu cuenta?',
-        'Se eliminarán permanentemente todos tus datos, estadísticas y logros. Esta acción no se puede deshacer.',
+        t('deleteAccountConfirmTitle'),
+        t('deleteAccountConfirmMessage'),
         async () => {
             await MathMasterDB.deleteUser(appState.currentUser.odId);
             closeSettings();
@@ -660,8 +779,9 @@ function selectLevel(level) {
         btn.classList.toggle('selected', parseInt(btn.dataset.level) === level);
     });
 
-    const config = LEVEL_CONFIG[level];
-    DOM.levelDescription.textContent = config.description;
+    // Obtener descripción traducida
+    const levelInfo = MathMasterI18n.getLevelInfo(level);
+    DOM.levelDescription.textContent = levelInfo.description;
 
     validateStartButton();
 }
@@ -827,7 +947,7 @@ function resetSelections() {
     DOM.levelButtons.forEach(btn => btn.classList.remove('selected'));
     DOM.tableButtons.forEach(btn => btn.classList.remove('selected'));
 
-    DOM.levelDescription.textContent = 'Selecciona un nivel para ver su descripción';
+    DOM.levelDescription.textContent = MathMasterI18n.t('selectLevelDesc');
     DOM.startBtn.disabled = true;
 }
 
@@ -1153,12 +1273,13 @@ function generatePEMDASQuestion(level) {
 
 function checkAnswer() {
     if (!gameState.isPlaying || gameState.isPaused) return;
+    const t = (key) => MathMasterI18n.t(key);
 
     const userInput = DOM.answerInput.value.trim().replace(',', '.');
     const userAnswer = parseFloat(userInput);
 
     if (isNaN(userAnswer) || userInput === '') {
-        showFeedback('Ingresa un número válido', 'incorrect');
+        showFeedback(t('enterValidNumber'), 'incorrect');
         DOM.answerInput.classList.add('incorrect');
         setTimeout(() => {
             DOM.answerInput.classList.remove('incorrect');
@@ -1182,6 +1303,7 @@ function handleCorrectAnswer() {
     gameState.correctAnswers++;
     gameState.currentStreak++;
     gameState.bestStreak = Math.max(gameState.bestStreak, gameState.currentStreak);
+    const t = (key, params) => MathMasterI18n.t(key, params);
 
     MathMasterAudio.playCorrect();
     MathMasterAudio.playStreak(gameState.currentStreak);
@@ -1193,11 +1315,11 @@ function handleCorrectAnswer() {
     DOM.answerInput.classList.add('correct');
 
     if (gameState.currentStreak >= 5) {
-        showFeedback(`¡Excelente! Racha de ${gameState.currentStreak}`, 'correct');
+        showFeedback(t('excellentStreak', { streak: gameState.currentStreak }), 'correct');
     } else if (gameState.currentStreak >= 3) {
-        showFeedback(`¡Muy bien! Racha de ${gameState.currentStreak}`, 'correct');
+        showFeedback(t('goodStreak', { streak: gameState.currentStreak }), 'correct');
     } else {
-        showFeedback('¡Correcto!', 'correct');
+        showFeedback(t('correct'), 'correct');
     }
 
     if (gameState.correctAnswers >= gameState.totalQuestions) {
@@ -1210,13 +1332,14 @@ function handleCorrectAnswer() {
 function handleIncorrectAnswer() {
     gameState.currentStreak = 0;
     gameState.hintsUsed++;
+    const t = (key) => MathMasterI18n.t(key);
 
     MathMasterAudio.playIncorrect();
 
     updateStreak();
     DOM.answerInput.classList.add('incorrect');
 
-    showFeedback('¡Incorrecto! Inténtalo de nuevo', 'incorrect');
+    showFeedback(t('incorrectTryAgain'), 'incorrect');
     showHint();
 
     setTimeout(() => {
@@ -1233,17 +1356,18 @@ function showFeedback(message, type) {
 
 function showHint() {
     const answer = gameState.currentAnswer;
+    const t = (key, params) => MathMasterI18n.t(key, params);
     let hint = '';
 
     if (Number.isInteger(answer)) {
         if (answer > 0) {
-            hint = `Pista: Es un número entre ${Math.max(0, answer - 10)} y ${answer + 10}`;
+            hint = t('hintRange', { min: Math.max(0, answer - 10), max: answer + 10 });
         } else {
-            hint = `Pista: Es un número negativo`;
+            hint = t('hintNegative');
         }
     } else {
         const rounded = Math.round(answer);
-        hint = `Pista: El resultado es aproximadamente ${rounded}`;
+        hint = t('hintApprox', { value: rounded });
     }
 
     DOM.hintText.textContent = hint;
@@ -1259,6 +1383,7 @@ function showScreen(screenName) {
     DOM.resultsScreen?.classList.remove('active');
     DOM.statsScreen?.classList.remove('active');
     DOM.achievementsScreen?.classList.remove('active');
+    DOM.profileScreen?.classList.remove('active');
 
     // Mostrar/ocultar barra superior
     if (DOM.topBar) {
@@ -1285,19 +1410,26 @@ function showScreen(screenName) {
         case 'achievements':
             DOM.achievementsScreen?.classList.add('active');
             break;
+        case 'profile':
+            DOM.profileScreen?.classList.add('active');
+            break;
     }
 }
 
 function updateOperationIndicator() {
+    const t = (key, params) => MathMasterI18n.t(key, params);
     let text;
     if (gameState.operation === 'tablas') {
         if (gameState.selectedTable === 'todas') {
-            text = 'Tablas de Multiplicar - Todas';
+            text = t('tablesAll');
         } else {
-            text = `Tabla del ${gameState.selectedTable}`;
+            text = t('tableOf', { number: gameState.selectedTable });
         }
     } else {
-        text = `${OPERATION_NAMES[gameState.operation]} - Nivel ${gameState.level}`;
+        text = t('operationLevel', {
+            operation: getOperationName(gameState.operation),
+            level: gameState.level
+        });
     }
     DOM.operationIndicator.textContent = text;
 }
@@ -1326,6 +1458,7 @@ function updateTTSButton() {
 }
 
 function displayResults(isNewRecord, newAchievements = []) {
+    const t = (key) => MathMasterI18n.t(key);
     const accuracy = gameState.totalAttempts > 0
         ? Math.round((gameState.correctAnswers / gameState.totalAttempts) * 100)
         : 0;
@@ -1336,16 +1469,16 @@ function displayResults(isNewRecord, newAchievements = []) {
 
     let title, emoji;
     if (accuracy >= 95) {
-        title = '¡Perfecto!';
+        title = t('resultPerfect');
         emoji = '🏆';
     } else if (accuracy >= 80) {
-        title = '¡Excelente!';
+        title = t('resultExcellent');
         emoji = '🌟';
     } else if (accuracy >= 60) {
-        title = '¡Muy Bien!';
+        title = t('resultVeryGood');
         emoji = '👏';
     } else {
-        title = '¡Buen Intento!';
+        title = t('resultGoodTry');
         emoji = '💪';
     }
 
@@ -1367,15 +1500,18 @@ function displayResults(isNewRecord, newAchievements = []) {
     // Mostrar logros desbloqueados
     if (newAchievements.length > 0 && DOM.unlockedAchievements && DOM.resultsAchievementsList) {
         DOM.unlockedAchievements.classList.remove('hidden');
-        DOM.resultsAchievementsList.innerHTML = newAchievements.map(a => `
+        DOM.resultsAchievementsList.innerHTML = newAchievements.map(a => {
+            // Use translated achievement info
+            const achievementInfo = MathMasterI18n.getAchievementInfo(a.id);
+            return `
             <div class="achievement-card">
                 <div class="achievement-icon">${a.icon}</div>
                 <div class="achievement-info">
-                    <div class="achievement-name">${a.name}</div>
-                    <div class="achievement-description">${a.description}</div>
+                    <div class="achievement-name">${achievementInfo?.name || a.name}</div>
+                    <div class="achievement-description">${achievementInfo?.description || a.description}</div>
                 </div>
             </div>
-        `).join('');
+        `}).join('');
     } else if (DOM.unlockedAchievements) {
         DOM.unlockedAchievements.classList.add('hidden');
     }
@@ -1383,9 +1519,54 @@ function displayResults(isNewRecord, newAchievements = []) {
 
 // ==================== PANTALLAS ADICIONALES ====================
 
-async function showStatsScreen() {
+async function showProfileScreen() {
+    const t = (key, params) => MathMasterI18n.t(key, params);
+
     if (!appState.currentUser || !appState.dbReady) {
-        alert('Inicia sesión para ver tus estadísticas');
+        alert(t('loginForStats'));
+        return;
+    }
+
+    try {
+        const user = appState.currentUser;
+        const stats = await MathMasterDB.getStatistics(user.odId);
+
+        // Información del usuario
+        DOM.profileUsername.textContent = user.username;
+
+        // Formatear fechas
+        const createdDate = new Date(user.createdAt);
+        const lastLoginDate = new Date(user.lastLogin);
+        const dateOptions = { year: 'numeric', month: 'short', day: 'numeric' };
+        const currentLang = MathMasterI18n.getCurrentLanguage();
+
+        DOM.profileCreated.textContent = createdDate.toLocaleDateString(currentLang, dateOptions);
+        DOM.profileLastLogin.textContent = lastLoginDate.toLocaleDateString(currentLang, dateOptions);
+
+        // Estadísticas rápidas
+        if (stats) {
+            DOM.profileTotalGames.textContent = stats.totalGames;
+            DOM.profileAccuracy.textContent = stats.totalAttempts > 0
+                ? `${Math.round((stats.totalCorrect / stats.totalAttempts) * 100)}%`
+                : '0%';
+            DOM.profileBestStreak.textContent = stats.bestStreak;
+        }
+
+        // Logros
+        const achievementProgress = MathMasterAchievements.getProgress();
+        DOM.profileAchievements.textContent = `${achievementProgress.unlocked}/${achievementProgress.total}`;
+
+        showScreen('profile');
+    } catch (e) {
+        console.error('Error cargando perfil:', e);
+    }
+}
+
+async function showStatsScreen() {
+    const t = (key, params) => MathMasterI18n.t(key, params);
+
+    if (!appState.currentUser || !appState.dbReady) {
+        alert(t('loginForStats'));
         return;
     }
 
@@ -1414,11 +1595,11 @@ async function showStatsScreen() {
                 <div class="operation-stat-row">
                     <div class="operation-stat-name">
                         <span class="operation-stat-icon">${OPERATION_ICONS[op] || '?'}</span>
-                        <span>${OPERATION_NAMES[op] || op}</span>
+                        <span>${getOperationName(op)}</span>
                     </div>
-                    <div class="operation-stat-value">${data.games} partidas / ${data.correct} correctas</div>
+                    <div class="operation-stat-value">${t('statsGamesCorrect', { games: data.games, correct: data.correct })}</div>
                 </div>
-            `).join('') || '<p class="no-data">Aún no has jugado ninguna partida</p>';
+            `).join('') || `<p class="no-data">${t('noGamesYet')}</p>`;
 
         showScreen('stats');
     } catch (e) {
