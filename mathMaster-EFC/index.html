@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MathMaster - Desafío Matemático</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- ==================== BOTÓN DE CAMBIO DE TEMA ==================== -->
+    <button id="theme-toggle" class="theme-toggle" aria-label="Cambiar tema" title="Cambiar tema claro/oscuro">
+        <span class="theme-icon theme-icon-dark">🌙</span>
+        <span class="theme-icon theme-icon-light">☀️</span>
+    </button>
+
+    <!-- ==================== PANTALLA DE SELECCIÓN ==================== -->
+    <div id="selection-screen" class="screen active">
+        <div class="container">
+            <!-- Logo y Título -->
+            <header class="game-header">
+                <h1 class="game-title">
+                    <span class="math-symbol">+</span>
+                    MathMaster
+                    <span class="math-symbol">=</span>
+                </h1>
+                <p class="game-subtitle">Desafío por Puntuación Fija</p>
+            </header>
+
+            <!-- Selección de Operación -->
+            <section class="selection-section">
+                <h2 class="section-title">Elige la Operación</h2>
+                <div class="operation-buttons">
+                    <button class="operation-btn" data-operation="suma">
+                        <span class="op-symbol">+</span>
+                        <span class="op-name">Suma</span>
+                    </button>
+                    <button class="operation-btn" data-operation="resta">
+                        <span class="op-symbol">−</span>
+                        <span class="op-name">Resta</span>
+                    </button>
+                    <button class="operation-btn" data-operation="multiplicacion">
+                        <span class="op-symbol">×</span>
+                        <span class="op-name">Multiplicación</span>
+                    </button>
+                    <button class="operation-btn" data-operation="division">
+                        <span class="op-symbol">÷</span>
+                        <span class="op-name">División</span>
+                    </button>
+                    <button class="operation-btn" data-operation="tablas">
+                        <span class="op-symbol">T</span>
+                        <span class="op-name">Tablas</span>
+                    </button>
+                </div>
+            </section>
+
+            <!-- Selección de Nivel de Dificultad -->
+            <section class="selection-section" id="level-section">
+                <h2 class="section-title">Nivel de Dificultad</h2>
+                <div class="level-buttons">
+                    <button class="level-btn" data-level="1">1</button>
+                    <button class="level-btn" data-level="2">2</button>
+                    <button class="level-btn" data-level="3">3</button>
+                    <button class="level-btn" data-level="4">4</button>
+                    <button class="level-btn" data-level="5">5</button>
+                    <button class="level-btn" data-level="6">6</button>
+                    <button class="level-btn" data-level="7">7</button>
+                    <button class="level-btn" data-level="8">8</button>
+                    <button class="level-btn" data-level="9">9</button>
+                    <button class="level-btn" data-level="10">10</button>
+                </div>
+                <p id="level-description" class="level-description">Selecciona un nivel para ver su descripción</p>
+            </section>
+
+            <!-- Selección de Tabla (solo visible en modo tablas) -->
+            <section class="selection-section hidden" id="table-section">
+                <h2 class="section-title">Tabla del...</h2>
+                <div class="table-buttons">
+                    <button class="table-btn" data-table="1">1</button>
+                    <button class="table-btn" data-table="2">2</button>
+                    <button class="table-btn" data-table="3">3</button>
+                    <button class="table-btn" data-table="4">4</button>
+                    <button class="table-btn" data-table="5">5</button>
+                    <button class="table-btn" data-table="6">6</button>
+                    <button class="table-btn" data-table="7">7</button>
+                    <button class="table-btn" data-table="8">8</button>
+                    <button class="table-btn" data-table="9">9</button>
+                    <button class="table-btn" data-table="10">10</button>
+                    <button class="table-btn table-todas" data-table="todas">Todas</button>
+                </div>
+            </section>
+
+            <!-- Selección de Cantidad de Preguntas -->
+            <section class="selection-section">
+                <h2 class="section-title">Cantidad de Preguntas</h2>
+                <div class="questions-buttons">
+                    <button class="questions-btn" data-questions="20">20</button>
+                    <button class="questions-btn selected" data-questions="30">30</button>
+                    <button class="questions-btn" data-questions="40">40</button>
+                </div>
+            </section>
+
+            <!-- Botón de Iniciar -->
+            <button id="start-btn" class="start-button" disabled>
+                <span class="btn-icon">🎮</span>
+                <span class="btn-text">¡EMPEZAR!</span>
+            </button>
+
+            <!-- Footer -->
+            <footer class="game-footer">
+                <p>Desarrollado por EFC | MathMaster v1.0</p>
+            </footer>
+        </div>
+    </div>
+
+    <!-- ==================== PANTALLA DE JUEGO ==================== -->
+    <div id="game-screen" class="screen">
+        <div class="container game-container">
+            <!-- Indicador de Operación y Nivel -->
+            <div class="operation-indicator" id="operation-indicator">Suma - Nivel 1</div>
+
+            <!-- Barra Superior: Stats del Juego -->
+            <header class="game-stats">
+                <div class="stat-item">
+                    <span class="stat-label">Tiempo</span>
+                    <span class="stat-value timer" id="timer">00:00</span>
+                </div>
+                <div class="stat-item score-item">
+                    <span class="stat-label">Puntuación</span>
+                    <span class="stat-value" id="score">0 / 30</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Racha</span>
+                    <span class="stat-value streak" id="streak">🔥 0</span>
+                </div>
+            </header>
+
+            <!-- Barra de Progreso -->
+            <div class="progress-container">
+                <div class="progress-bar" id="progress-bar"></div>
+            </div>
+
+            <!-- Área de Pregunta -->
+            <main class="question-area">
+                <div class="question-box">
+                    <span class="question-text" id="question-text">5 + 3 = ?</span>
+                </div>
+
+                <!-- Campo de Respuesta -->
+                <div class="answer-area">
+                    <input
+                        type="text"
+                        id="answer-input"
+                        class="answer-input"
+                        placeholder="Tu respuesta"
+                        autocomplete="off"
+                        inputmode="decimal"
+                    >
+                    <button id="submit-btn" class="submit-button">
+                        Verificar
+                    </button>
+                </div>
+
+                <!-- Feedback -->
+                <div class="feedback-container" id="feedback-container">
+                    <span class="feedback-text" id="feedback-text"></span>
+                    <span class="hint-text" id="hint-text"></span>
+                </div>
+            </main>
+
+            <!-- Teclado Numérico (para móviles) -->
+            <div class="numpad" id="numpad">
+                <button class="numpad-btn" data-value="7">7</button>
+                <button class="numpad-btn" data-value="8">8</button>
+                <button class="numpad-btn" data-value="9">9</button>
+                <button class="numpad-btn" data-value="4">4</button>
+                <button class="numpad-btn" data-value="5">5</button>
+                <button class="numpad-btn" data-value="6">6</button>
+                <button class="numpad-btn" data-value="1">1</button>
+                <button class="numpad-btn" data-value="2">2</button>
+                <button class="numpad-btn" data-value="3">3</button>
+                <button class="numpad-btn negative-btn" data-value="-">−</button>
+                <button class="numpad-btn" data-value="0">0</button>
+                <button class="numpad-btn" data-value=".">.</button>
+                <button class="numpad-btn delete-btn" data-value="delete">⌫</button>
+                <button class="numpad-btn clear-btn" data-value="clear">C</button>
+                <button class="numpad-btn enter-btn" data-value="enter">✓</button>
+            </div>
+
+            <!-- Controles del Juego -->
+            <div class="game-controls">
+                <button id="pause-btn" class="control-btn">⏸️ Pausar</button>
+                <button id="quit-btn" class="control-btn quit">🚪 Salir</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== PANTALLA DE PAUSA ==================== -->
+    <div id="pause-overlay" class="overlay hidden">
+        <div class="overlay-content">
+            <h2>⏸️ Juego Pausado</h2>
+            <p class="pause-stats">Respuestas: <span id="pause-score">0</span> | Tiempo: <span id="pause-time">00:00</span></p>
+            <button id="resume-btn" class="action-button primary">▶️ Continuar</button>
+            <button id="restart-btn" class="action-button secondary">🔄 Reiniciar</button>
+            <button id="pause-quit-btn" class="action-button secondary">🏠 Menú Principal</button>
+        </div>
+    </div>
+
+    <!-- ==================== PANTALLA DE RESULTADOS ==================== -->
+    <div id="results-screen" class="screen">
+        <div class="container results-container">
+            <header class="results-header">
+                <h2 class="results-title" id="results-title">¡Felicitaciones!</h2>
+                <div class="results-emoji" id="results-emoji">🏆</div>
+            </header>
+
+            <!-- Estadísticas Finales -->
+            <div class="results-stats">
+                <div class="result-stat main-stat">
+                    <span class="result-label">Respuestas Correctas</span>
+                    <span class="result-value" id="final-score">30 / 30</span>
+                </div>
+                <div class="result-stat">
+                    <span class="result-label">Tiempo Total</span>
+                    <span class="result-value" id="total-time">05:30</span>
+                </div>
+                <div class="result-stat">
+                    <span class="result-label">Mejor Racha</span>
+                    <span class="result-value" id="best-streak">15</span>
+                </div>
+                <div class="result-stat">
+                    <span class="result-label">Precisión</span>
+                    <span class="result-value" id="accuracy">100%</span>
+                </div>
+                <div class="result-stat">
+                    <span class="result-label">Intentos Totales</span>
+                    <span class="result-value" id="total-attempts">30</span>
+                </div>
+                <div class="result-stat">
+                    <span class="result-label">Promedio por Pregunta</span>
+                    <span class="result-value" id="avg-time">11s</span>
+                </div>
+            </div>
+
+            <!-- Récord Personal -->
+            <div class="record-section hidden" id="record-section">
+                <span class="record-badge">🌟 ¡Nuevo Récord de Tiempo!</span>
+            </div>
+
+            <!-- Botones de Acción -->
+            <div class="results-actions">
+                <button id="retry-btn" class="action-button primary">
+                    <span class="btn-icon">🔄</span>
+                    Jugar de Nuevo
+                </button>
+                <button id="menu-btn" class="action-button secondary">
+                    <span class="btn-icon">🏠</span>
+                    Menú Principal
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Script del Juego -->
+    <script src="game.js"></script>
+</body>
+</html>
