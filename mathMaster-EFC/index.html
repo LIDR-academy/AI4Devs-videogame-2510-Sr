@@ -8,14 +8,80 @@
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
 </head>
 <body>
-    <!-- ==================== BOTÓN DE CAMBIO DE TEMA ==================== -->
-    <button id="theme-toggle" class="theme-toggle" aria-label="Cambiar tema" title="Cambiar tema claro/oscuro">
-        <span class="theme-icon theme-icon-dark">🌙</span>
-        <span class="theme-icon theme-icon-light">☀️</span>
-    </button>
+    <!-- ==================== BARRA SUPERIOR GLOBAL ==================== -->
+    <div class="top-bar">
+        <!-- Usuario actual -->
+        <div class="user-badge hidden" id="user-badge">
+            <span class="user-avatar">👤</span>
+            <span class="user-name" id="current-user-name">Jugador</span>
+            <button class="user-menu-btn" id="user-menu-btn" aria-label="Menú de usuario">▼</button>
+        </div>
+
+        <!-- Controles -->
+        <div class="top-controls">
+            <button id="settings-btn" class="icon-btn" aria-label="Configuración" title="Configuración">
+                ⚙️
+            </button>
+            <button id="theme-toggle" class="icon-btn" aria-label="Cambiar tema" title="Cambiar tema claro/oscuro">
+                <span class="theme-icon theme-icon-dark">🌙</span>
+                <span class="theme-icon theme-icon-light">☀️</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- ==================== PANTALLA DE LOGIN/SELECCIÓN DE USUARIO ==================== -->
+    <div id="login-screen" class="screen active">
+        <div class="container">
+            <header class="game-header">
+                <h1 class="game-title">
+                    <span class="math-symbol">+</span>
+                    MathMaster
+                    <span class="math-symbol">=</span>
+                </h1>
+                <p class="game-subtitle">Desafío por Puntuación Fija</p>
+            </header>
+
+            <section class="login-section">
+                <h2 class="section-title">Selecciona o crea tu perfil</h2>
+
+                <!-- Lista de usuarios existentes -->
+                <div class="users-list" id="users-list">
+                    <!-- Se llena dinámicamente -->
+                </div>
+
+                <!-- Crear nuevo usuario -->
+                <div class="new-user-form">
+                    <input
+                        type="text"
+                        id="new-username"
+                        class="username-input"
+                        placeholder="Nombre del jugador"
+                        maxlength="20"
+                        autocomplete="off"
+                    >
+                    <button id="create-user-btn" class="action-button primary">
+                        <span class="btn-icon">➕</span>
+                        Crear Perfil
+                    </button>
+                </div>
+
+                <!-- Opción de jugar sin cuenta -->
+                <div class="guest-option">
+                    <button id="play-guest-btn" class="action-button secondary">
+                        <span class="btn-icon">👤</span>
+                        Jugar como Invitado
+                    </button>
+                </div>
+            </section>
+
+            <footer class="game-footer">
+                <p>Desarrollado por EFC | MathMaster v2.0</p>
+            </footer>
+        </div>
+    </div>
 
     <!-- ==================== PANTALLA DE SELECCIÓN ==================== -->
-    <div id="selection-screen" class="screen active">
+    <div id="selection-screen" class="screen">
         <div class="container">
             <!-- Logo y Título -->
             <header class="game-header">
@@ -106,9 +172,19 @@
                 <span class="btn-text">¡EMPEZAR!</span>
             </button>
 
+            <!-- Acceso Rápido -->
+            <div class="quick-access">
+                <button id="stats-btn" class="quick-btn" title="Ver estadísticas">
+                    📊 Estadísticas
+                </button>
+                <button id="achievements-btn" class="quick-btn" title="Ver logros">
+                    🏆 Logros
+                </button>
+            </div>
+
             <!-- Footer -->
             <footer class="game-footer">
-                <p>Desarrollado por EFC | MathMaster v1.0</p>
+                <p>Desarrollado por EFC | MathMaster v2.0</p>
             </footer>
         </div>
     </div>
@@ -144,6 +220,10 @@
             <main class="question-area">
                 <div class="question-box">
                     <span class="question-text" id="question-text">5 + 3 = ?</span>
+                    <!-- Botón TTS para leer pregunta -->
+                    <button id="speak-question-btn" class="speak-btn hidden" aria-label="Leer pregunta" title="Leer pregunta en voz alta">
+                        🔊
+                    </button>
                 </div>
 
                 <!-- Campo de Respuesta -->
@@ -247,6 +327,14 @@
                 <span class="record-badge">🌟 ¡Nuevo Récord de Tiempo!</span>
             </div>
 
+            <!-- Logros Desbloqueados -->
+            <div class="unlocked-achievements hidden" id="unlocked-achievements">
+                <h3>🏆 Logros Desbloqueados</h3>
+                <div class="achievements-list" id="results-achievements-list">
+                    <!-- Se llena dinámicamente -->
+                </div>
+            </div>
+
             <!-- Botones de Acción -->
             <div class="results-actions">
                 <button id="retry-btn" class="action-button primary">
@@ -261,7 +349,180 @@
         </div>
     </div>
 
-    <!-- Script del Juego -->
+    <!-- ==================== PANTALLA DE ESTADÍSTICAS ==================== -->
+    <div id="stats-screen" class="screen">
+        <div class="container">
+            <header class="screen-header">
+                <button class="back-btn" id="stats-back-btn">← Volver</button>
+                <h2>📊 Estadísticas</h2>
+            </header>
+
+            <div class="stats-content" id="stats-content">
+                <!-- Estadísticas Generales -->
+                <section class="stats-section">
+                    <h3>Resumen General</h3>
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <span class="stat-card-value" id="stat-total-games">0</span>
+                            <span class="stat-card-label">Partidas Jugadas</span>
+                        </div>
+                        <div class="stat-card">
+                            <span class="stat-card-value" id="stat-total-correct">0</span>
+                            <span class="stat-card-label">Respuestas Correctas</span>
+                        </div>
+                        <div class="stat-card">
+                            <span class="stat-card-value" id="stat-accuracy">0%</span>
+                            <span class="stat-card-label">Precisión Global</span>
+                        </div>
+                        <div class="stat-card">
+                            <span class="stat-card-value" id="stat-best-streak">0</span>
+                            <span class="stat-card-label">Mejor Racha</span>
+                        </div>
+                        <div class="stat-card">
+                            <span class="stat-card-value" id="stat-total-time">0h 0m</span>
+                            <span class="stat-card-label">Tiempo Total</span>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Por Operación -->
+                <section class="stats-section">
+                    <h3>Por Operación</h3>
+                    <div class="operation-stats" id="operation-stats">
+                        <!-- Se llena dinámicamente -->
+                    </div>
+                </section>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== PANTALLA DE LOGROS ==================== -->
+    <div id="achievements-screen" class="screen">
+        <div class="container">
+            <header class="screen-header">
+                <button class="back-btn" id="achievements-back-btn">← Volver</button>
+                <h2>🏆 Logros</h2>
+            </header>
+
+            <div class="achievements-content" id="achievements-content">
+                <!-- Se llena dinámicamente con MathMasterAchievements.renderAchievementsList() -->
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== MODAL DE CONFIGURACIÓN ==================== -->
+    <div id="settings-modal" class="modal hidden">
+        <div class="modal-content">
+            <header class="modal-header">
+                <h2>⚙️ Configuración</h2>
+                <button class="close-modal-btn" id="close-settings-btn" aria-label="Cerrar">✕</button>
+            </header>
+
+            <div class="settings-content">
+                <!-- Audio -->
+                <section class="settings-section">
+                    <h3>🔊 Audio</h3>
+
+                    <div class="setting-item">
+                        <label class="setting-label">
+                            <span>Efectos de Sonido</span>
+                            <span class="setting-description">Sonidos para aciertos, errores y logros</span>
+                        </label>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="setting-sound" checked>
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+
+                    <div class="setting-item">
+                        <label class="setting-label">
+                            <span>Volumen</span>
+                        </label>
+                        <input type="range" id="setting-volume" min="0" max="100" value="80" class="volume-slider">
+                    </div>
+
+                    <div class="setting-item">
+                        <label class="setting-label">
+                            <span>Lectura en Voz Alta (TTS)</span>
+                            <span class="setting-description">Lee las preguntas y resultados</span>
+                        </label>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="setting-tts">
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                </section>
+
+                <!-- Accesibilidad -->
+                <section class="settings-section">
+                    <h3>♿ Accesibilidad</h3>
+
+                    <div class="setting-item">
+                        <label class="setting-label">
+                            <span>Modo Alto Contraste</span>
+                            <span class="setting-description">Mejora la visibilidad para personas con dificultades visuales</span>
+                        </label>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="setting-high-contrast">
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                </section>
+
+                <!-- Cuenta -->
+                <section class="settings-section" id="account-settings">
+                    <h3>👤 Cuenta</h3>
+
+                    <div class="setting-item">
+                        <label class="setting-label">
+                            <span>Usuario Actual</span>
+                            <span class="setting-description" id="settings-current-user">Invitado</span>
+                        </label>
+                        <button class="setting-btn" id="change-user-btn">Cambiar</button>
+                    </div>
+
+                    <div class="setting-item danger-zone hidden" id="delete-account-section">
+                        <label class="setting-label">
+                            <span>Eliminar Cuenta</span>
+                            <span class="setting-description">Esta acción no se puede deshacer</span>
+                        </label>
+                        <button class="setting-btn danger" id="delete-account-btn">Eliminar</button>
+                    </div>
+                </section>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== MODAL DE CONFIRMACIÓN ==================== -->
+    <div id="confirm-modal" class="modal hidden">
+        <div class="modal-content modal-small">
+            <h3 id="confirm-title">¿Estás seguro?</h3>
+            <p id="confirm-message">Esta acción no se puede deshacer.</p>
+            <div class="modal-actions">
+                <button class="action-button secondary" id="confirm-cancel-btn">Cancelar</button>
+                <button class="action-button danger" id="confirm-ok-btn">Confirmar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== MENÚ DE USUARIO ==================== -->
+    <div id="user-menu" class="dropdown-menu hidden">
+        <button class="menu-item" id="menu-profile">👤 Mi Perfil</button>
+        <button class="menu-item" id="menu-stats">📊 Estadísticas</button>
+        <button class="menu-item" id="menu-achievements">🏆 Logros</button>
+        <hr class="menu-divider">
+        <button class="menu-item" id="menu-logout">🚪 Cerrar Sesión</button>
+    </div>
+
+    <!-- ==================== CONTENEDOR DE NOTIFICACIONES ==================== -->
+    <div id="notifications-container" class="notifications-container">
+        <!-- Las notificaciones de logros aparecen aquí -->
+    </div>
+
+    <!-- Scripts del Juego -->
+    <script src="database.js"></script>
+    <script src="audio.js"></script>
+    <script src="achievements.js"></script>
     <script src="game.js"></script>
 </body>
 </html>

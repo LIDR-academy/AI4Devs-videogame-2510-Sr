@@ -1,12 +1,14 @@
 /**
  * MathMaster - Juego Educativo de Matemáticas
  * Desarrollado por: EFC
- * Versión: 1.0
+ * Versión: 2.0
  *
  * Modo: Desafío por Puntuación Fija
  * El jugador debe responder correctamente un número fijo de preguntas (20/30/40)
  * Si responde incorrectamente, puede reintentar hasta acertar
  * El cronómetro es ascendente (sin presión de tiempo)
+ *
+ * v2.0: Sistema de usuarios, logros, audio y accesibilidad
  */
 
 // ==================== CONFIGURACIÓN DE NIVELES ====================
@@ -106,6 +108,22 @@ const OPERATION_NAMES = {
     tablas: 'Tablas de Multiplicar'
 };
 
+const OPERATION_ICONS = {
+    suma: '+',
+    resta: '−',
+    multiplicacion: '×',
+    division: '÷',
+    tablas: 'T'
+};
+
+// ==================== ESTADO DE LA APLICACIÓN ====================
+
+let appState = {
+    currentUser: null,
+    isGuest: false,
+    dbReady: false
+};
+
 // ==================== ESTADO DEL JUEGO ====================
 
 let gameState = {
@@ -122,6 +140,7 @@ let gameState = {
     currentStreak: 0,
     bestStreak: 0,
     totalAttempts: 0,
+    hintsUsed: 0,
     currentQuestion: null,
     currentAnswer: null,
 
@@ -138,10 +157,32 @@ const DOM = {};
 
 function initDOM() {
     // Pantallas
+    DOM.loginScreen = document.getElementById('login-screen');
     DOM.selectionScreen = document.getElementById('selection-screen');
     DOM.gameScreen = document.getElementById('game-screen');
     DOM.resultsScreen = document.getElementById('results-screen');
+    DOM.statsScreen = document.getElementById('stats-screen');
+    DOM.achievementsScreen = document.getElementById('achievements-screen');
     DOM.pauseOverlay = document.getElementById('pause-overlay');
+
+    // Modales
+    DOM.settingsModal = document.getElementById('settings-modal');
+    DOM.confirmModal = document.getElementById('confirm-modal');
+
+    // Barra superior
+    DOM.topBar = document.querySelector('.top-bar');
+    DOM.userBadge = document.getElementById('user-badge');
+    DOM.currentUserName = document.getElementById('current-user-name');
+    DOM.userMenuBtn = document.getElementById('user-menu-btn');
+    DOM.userMenu = document.getElementById('user-menu');
+    DOM.settingsBtn = document.getElementById('settings-btn');
+    DOM.themeToggle = document.getElementById('theme-toggle');
+
+    // Login
+    DOM.usersList = document.getElementById('users-list');
+    DOM.newUsernameInput = document.getElementById('new-username');
+    DOM.createUserBtn = document.getElementById('create-user-btn');
+    DOM.playGuestBtn = document.getElementById('play-guest-btn');
 
     // Controles de selección
     DOM.operationButtons = document.querySelectorAll('.operation-btn');
@@ -152,6 +193,8 @@ function initDOM() {
     DOM.questionsButtons = document.querySelectorAll('.questions-btn');
     DOM.levelDescription = document.getElementById('level-description');
     DOM.startBtn = document.getElementById('start-btn');
+    DOM.statsBtn = document.getElementById('stats-btn');
+    DOM.achievementsBtn = document.getElementById('achievements-btn');
 
     // Elementos del juego
     DOM.operationIndicator = document.getElementById('operation-indicator');
@@ -160,6 +203,7 @@ function initDOM() {
     DOM.streak = document.getElementById('streak');
     DOM.progressBar = document.getElementById('progress-bar');
     DOM.questionText = document.getElementById('question-text');
+    DOM.speakQuestionBtn = document.getElementById('speak-question-btn');
     DOM.answerInput = document.getElementById('answer-input');
     DOM.submitBtn = document.getElementById('submit-btn');
     DOM.feedbackText = document.getElementById('feedback-text');
@@ -185,78 +229,406 @@ function initDOM() {
     DOM.totalAttempts = document.getElementById('total-attempts');
     DOM.avgTime = document.getElementById('avg-time');
     DOM.recordSection = document.getElementById('record-section');
+    DOM.unlockedAchievements = document.getElementById('unlocked-achievements');
+    DOM.resultsAchievementsList = document.getElementById('results-achievements-list');
     DOM.retryBtn = document.getElementById('retry-btn');
     DOM.menuBtn = document.getElementById('menu-btn');
+
+    // Estadísticas
+    DOM.statsBackBtn = document.getElementById('stats-back-btn');
+    DOM.statsContent = document.getElementById('stats-content');
+
+    // Logros
+    DOM.achievementsBackBtn = document.getElementById('achievements-back-btn');
+    DOM.achievementsContent = document.getElementById('achievements-content');
+
+    // Configuración
+    DOM.closeSettingsBtn = document.getElementById('close-settings-btn');
+    DOM.settingSound = document.getElementById('setting-sound');
+    DOM.settingVolume = document.getElementById('setting-volume');
+    DOM.settingTTS = document.getElementById('setting-tts');
+    DOM.settingHighContrast = document.getElementById('setting-high-contrast');
+    DOM.settingsCurrentUser = document.getElementById('settings-current-user');
+    DOM.changeUserBtn = document.getElementById('change-user-btn');
+    DOM.deleteAccountSection = document.getElementById('delete-account-section');
+    DOM.deleteAccountBtn = document.getElementById('delete-account-btn');
+
+    // Menú de usuario
+    DOM.menuProfile = document.getElementById('menu-profile');
+    DOM.menuStats = document.getElementById('menu-stats');
+    DOM.menuAchievements = document.getElementById('menu-achievements');
+    DOM.menuLogout = document.getElementById('menu-logout');
+
+    // Confirmación
+    DOM.confirmTitle = document.getElementById('confirm-title');
+    DOM.confirmMessage = document.getElementById('confirm-message');
+    DOM.confirmCancelBtn = document.getElementById('confirm-cancel-btn');
+    DOM.confirmOkBtn = document.getElementById('confirm-ok-btn');
+
+    // Notificaciones
+    DOM.notificationsContainer = document.getElementById('notifications-container');
 }
 
 // ==================== INICIALIZACIÓN ====================
 
-function init() {
+async function init() {
     initDOM();
+
+    // Inicializar base de datos
+    try {
+        await MathMasterDB.init();
+        appState.dbReady = true;
+    } catch (e) {
+        console.warn('IndexedDB no disponible, modo invitado forzado:', e);
+    }
+
     setupEventListeners();
+    loadSettings();
     loadRecords();
+
+    // Mostrar usuarios existentes en login
+    await refreshUsersList();
 }
 
 function setupEventListeners() {
-    // Botones de operación
+    // === Login ===
+    DOM.createUserBtn.addEventListener('click', createNewUser);
+    DOM.playGuestBtn.addEventListener('click', playAsGuest);
+    DOM.newUsernameInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') createNewUser();
+    });
+
+    // === Barra superior ===
+    DOM.settingsBtn.addEventListener('click', openSettings);
+    DOM.themeToggle.addEventListener('click', toggleTheme);
+    DOM.userBadge?.addEventListener('click', toggleUserMenu);
+    DOM.userMenuBtn?.addEventListener('click', toggleUserMenu);
+
+    // === Menú de usuario ===
+    DOM.menuStats?.addEventListener('click', () => {
+        hideUserMenu();
+        showStatsScreen();
+    });
+    DOM.menuAchievements?.addEventListener('click', () => {
+        hideUserMenu();
+        showAchievementsScreen();
+    });
+    DOM.menuLogout?.addEventListener('click', () => {
+        hideUserMenu();
+        logout();
+    });
+
+    // === Cerrar menú al hacer clic fuera ===
+    document.addEventListener('click', (e) => {
+        if (!DOM.userBadge?.contains(e.target) && !DOM.userMenu?.contains(e.target)) {
+            hideUserMenu();
+        }
+    });
+
+    // === Selección de juego ===
     DOM.operationButtons.forEach(btn => {
-        btn.addEventListener('click', () => selectOperation(btn.dataset.operation));
+        btn.addEventListener('click', () => {
+            MathMasterAudio.playClick();
+            selectOperation(btn.dataset.operation);
+        });
     });
 
-    // Botones de nivel
     DOM.levelButtons.forEach(btn => {
-        btn.addEventListener('click', () => selectLevel(parseInt(btn.dataset.level)));
+        btn.addEventListener('click', () => {
+            MathMasterAudio.playClick();
+            selectLevel(parseInt(btn.dataset.level));
+        });
     });
 
-    // Botones de tabla
     DOM.tableButtons.forEach(btn => {
-        btn.addEventListener('click', () => selectTable(btn.dataset.table));
+        btn.addEventListener('click', () => {
+            MathMasterAudio.playClick();
+            selectTable(btn.dataset.table);
+        });
     });
 
-    // Botones de cantidad de preguntas
     DOM.questionsButtons.forEach(btn => {
-        btn.addEventListener('click', () => selectQuestions(parseInt(btn.dataset.questions)));
+        btn.addEventListener('click', () => {
+            MathMasterAudio.playClick();
+            selectQuestions(parseInt(btn.dataset.questions));
+        });
     });
 
-    // Botón de inicio
-    DOM.startBtn.addEventListener('click', startGame);
+    DOM.startBtn.addEventListener('click', () => {
+        MathMasterAudio.playGameStart();
+        startGame();
+    });
 
-    // Botón de verificar respuesta
+    DOM.statsBtn?.addEventListener('click', showStatsScreen);
+    DOM.achievementsBtn?.addEventListener('click', showAchievementsScreen);
+
+    // === Juego ===
     DOM.submitBtn.addEventListener('click', checkAnswer);
-
-    // Enter en input de respuesta
     DOM.answerInput.addEventListener('keypress', (e) => {
         if (e.key === 'Enter') checkAnswer();
     });
 
-    // Teclado numérico
     DOM.numpadButtons.forEach(btn => {
         btn.addEventListener('click', () => handleNumpad(btn.dataset.value));
     });
 
-    // Controles del juego
     DOM.pauseBtn.addEventListener('click', pauseGame);
     DOM.quitBtn.addEventListener('click', confirmQuit);
 
-    // Controles de pausa
+    DOM.speakQuestionBtn?.addEventListener('click', () => {
+        MathMasterAudio.speakQuestion(gameState.currentQuestion);
+    });
+
+    // === Pausa ===
     DOM.resumeBtn.addEventListener('click', resumeGame);
     DOM.restartBtn.addEventListener('click', restartGame);
     DOM.pauseQuitBtn.addEventListener('click', quitToMenu);
 
-    // Controles de resultados
+    // === Resultados ===
     DOM.retryBtn.addEventListener('click', restartGame);
     DOM.menuBtn.addEventListener('click', quitToMenu);
 
-    // Tecla Escape para pausar
+    // === Estadísticas y Logros ===
+    DOM.statsBackBtn?.addEventListener('click', () => showScreen('selection'));
+    DOM.achievementsBackBtn?.addEventListener('click', () => showScreen('selection'));
+
+    // === Configuración ===
+    DOM.closeSettingsBtn?.addEventListener('click', closeSettings);
+    DOM.settingSound?.addEventListener('change', () => {
+        MathMasterAudio.enabled = DOM.settingSound.checked;
+        MathMasterAudio.saveSettings();
+        if (DOM.settingSound.checked) MathMasterAudio.playClick();
+    });
+    DOM.settingVolume?.addEventListener('input', () => {
+        MathMasterAudio.setVolume(DOM.settingVolume.value / 100);
+    });
+    DOM.settingTTS?.addEventListener('change', () => {
+        MathMasterAudio.ttsEnabled = DOM.settingTTS.checked;
+        MathMasterAudio.saveSettings();
+        updateTTSButton();
+        if (DOM.settingTTS.checked) {
+            MathMasterAudio.speak('Lectura de texto activada');
+        }
+    });
+    DOM.settingHighContrast?.addEventListener('change', () => {
+        setHighContrast(DOM.settingHighContrast.checked);
+    });
+    DOM.changeUserBtn?.addEventListener('click', () => {
+        closeSettings();
+        logout();
+    });
+    DOM.deleteAccountBtn?.addEventListener('click', confirmDeleteAccount);
+
+    // === Escape para pausar ===
     document.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape' && gameState.isPlaying) {
-            if (gameState.isPaused) {
-                resumeGame();
-            } else {
-                pauseGame();
+        if (e.key === 'Escape') {
+            if (gameState.isPlaying) {
+                if (gameState.isPaused) {
+                    resumeGame();
+                } else {
+                    pauseGame();
+                }
+            } else if (!DOM.settingsModal.classList.contains('hidden')) {
+                closeSettings();
             }
         }
     });
+}
+
+// ==================== GESTIÓN DE USUARIOS ====================
+
+async function refreshUsersList() {
+    if (!appState.dbReady || !DOM.usersList) return;
+
+    try {
+        const users = await MathMasterDB.getAllUsers();
+
+        if (users.length === 0) {
+            DOM.usersList.innerHTML = `
+                <div class="no-users-message">
+                    <p>No hay perfiles guardados</p>
+                </div>
+            `;
+        } else {
+            DOM.usersList.innerHTML = users.map(user => `
+                <div class="user-card" data-user-id="${user.odId}">
+                    <div class="user-card-info">
+                        <span class="user-card-avatar">👤</span>
+                        <div>
+                            <div class="user-card-name">${escapeHtml(user.username)}</div>
+                            <div class="user-card-stats">Creado: ${new Date(user.createdAt).toLocaleDateString('es-ES')}</div>
+                        </div>
+                    </div>
+                    <button class="user-card-delete" data-user-id="${user.odId}" title="Eliminar perfil">🗑️</button>
+                </div>
+            `).join('');
+
+            // Event listeners para seleccionar usuario
+            DOM.usersList.querySelectorAll('.user-card').forEach(card => {
+                card.addEventListener('click', (e) => {
+                    if (!e.target.classList.contains('user-card-delete')) {
+                        const userId = parseInt(card.dataset.userId);
+                        loginUser(userId);
+                    }
+                });
+            });
+
+            // Event listeners para eliminar usuario
+            DOM.usersList.querySelectorAll('.user-card-delete').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const userId = parseInt(btn.dataset.userId);
+                    confirmDeleteUser(userId);
+                });
+            });
+        }
+    } catch (e) {
+        console.error('Error cargando usuarios:', e);
+    }
+}
+
+async function createNewUser() {
+    const username = DOM.newUsernameInput.value.trim();
+
+    if (!username) {
+        alert('Por favor, ingresa un nombre de usuario');
+        return;
+    }
+
+    if (username.length < 2 || username.length > 20) {
+        alert('El nombre debe tener entre 2 y 20 caracteres');
+        return;
+    }
+
+    if (!appState.dbReady) {
+        playAsGuest();
+        return;
+    }
+
+    try {
+        const userId = await MathMasterDB.createUser(username);
+        DOM.newUsernameInput.value = '';
+        MathMasterAudio.playCorrect();
+        await loginUser(userId);
+    } catch (e) {
+        if (e.name === 'ConstraintError') {
+            alert('Ya existe un usuario con ese nombre');
+        } else {
+            console.error('Error creando usuario:', e);
+            playAsGuest();
+        }
+    }
+}
+
+async function loginUser(userId) {
+    try {
+        const user = await MathMasterDB.getUser(userId);
+        if (!user) throw new Error('Usuario no encontrado');
+
+        appState.currentUser = user;
+        appState.isGuest = false;
+
+        // Actualizar último login
+        user.lastLogin = new Date().toISOString();
+        await MathMasterDB.updateUser(user);
+
+        // Cargar logros del usuario
+        const achievements = await MathMasterDB.getAchievements(userId);
+        MathMasterAchievements.init(achievements?.unlockedAchievements || []);
+
+        // Actualizar UI
+        updateUserBadge();
+        showScreen('selection');
+    } catch (e) {
+        console.error('Error al iniciar sesión:', e);
+        playAsGuest();
+    }
+}
+
+function playAsGuest() {
+    appState.currentUser = null;
+    appState.isGuest = true;
+    MathMasterAchievements.init([]);
+    updateUserBadge();
+    showScreen('selection');
+}
+
+function logout() {
+    appState.currentUser = null;
+    appState.isGuest = false;
+    MathMasterAchievements.init([]);
+    updateUserBadge();
+    refreshUsersList();
+    showScreen('login');
+}
+
+function updateUserBadge() {
+    if (!DOM.userBadge) return;
+
+    if (appState.currentUser) {
+        DOM.userBadge.classList.remove('hidden');
+        DOM.currentUserName.textContent = appState.currentUser.username;
+        if (DOM.settingsCurrentUser) {
+            DOM.settingsCurrentUser.textContent = appState.currentUser.username;
+        }
+        if (DOM.deleteAccountSection) {
+            DOM.deleteAccountSection.classList.remove('hidden');
+        }
+    } else if (appState.isGuest) {
+        DOM.userBadge.classList.remove('hidden');
+        DOM.currentUserName.textContent = 'Invitado';
+        if (DOM.settingsCurrentUser) {
+            DOM.settingsCurrentUser.textContent = 'Invitado (sin guardar progreso)';
+        }
+        if (DOM.deleteAccountSection) {
+            DOM.deleteAccountSection.classList.add('hidden');
+        }
+    } else {
+        DOM.userBadge.classList.add('hidden');
+    }
+}
+
+function toggleUserMenu() {
+    DOM.userMenu?.classList.toggle('hidden');
+
+    if (!DOM.userMenu?.classList.contains('hidden')) {
+        // Posicionar menú debajo del badge
+        const rect = DOM.userBadge.getBoundingClientRect();
+        DOM.userMenu.style.top = `${rect.bottom + 8}px`;
+        DOM.userMenu.style.left = `${rect.left}px`;
+    }
+}
+
+function hideUserMenu() {
+    DOM.userMenu?.classList.add('hidden');
+}
+
+async function confirmDeleteUser(userId) {
+    const user = await MathMasterDB.getUser(userId);
+    if (!user) return;
+
+    showConfirmModal(
+        '¿Eliminar perfil?',
+        `Se eliminará permanentemente el perfil "${user.username}" y todos sus datos.`,
+        async () => {
+            await MathMasterDB.deleteUser(userId);
+            await refreshUsersList();
+        }
+    );
+}
+
+function confirmDeleteAccount() {
+    if (!appState.currentUser) return;
+
+    showConfirmModal(
+        '¿Eliminar tu cuenta?',
+        'Se eliminarán permanentemente todos tus datos, estadísticas y logros. Esta acción no se puede deshacer.',
+        async () => {
+            await MathMasterDB.deleteUser(appState.currentUser.odId);
+            closeSettings();
+            logout();
+        }
+    );
 }
 
 // ==================== SELECCIÓN DE OPCIONES ====================
@@ -264,16 +636,14 @@ function setupEventListeners() {
 function selectOperation(operation) {
     gameState.operation = operation;
 
-    // Actualizar botones activos
     DOM.operationButtons.forEach(btn => {
         btn.classList.toggle('selected', btn.dataset.operation === operation);
     });
 
-    // Mostrar/ocultar secciones según operación
     if (operation === 'tablas') {
         DOM.levelSection.classList.add('hidden');
         DOM.tableSection.classList.remove('hidden');
-        gameState.level = 1; // Nivel fijo para tablas
+        gameState.level = 1;
     } else {
         DOM.levelSection.classList.remove('hidden');
         DOM.tableSection.classList.add('hidden');
@@ -286,12 +656,10 @@ function selectOperation(operation) {
 function selectLevel(level) {
     gameState.level = level;
 
-    // Actualizar botones activos
     DOM.levelButtons.forEach(btn => {
         btn.classList.toggle('selected', parseInt(btn.dataset.level) === level);
     });
 
-    // Mostrar descripción del nivel
     const config = LEVEL_CONFIG[level];
     DOM.levelDescription.textContent = config.description;
 
@@ -301,7 +669,6 @@ function selectLevel(level) {
 function selectTable(table) {
     gameState.selectedTable = table === 'todas' ? 'todas' : parseInt(table);
 
-    // Actualizar botones activos
     DOM.tableButtons.forEach(btn => {
         btn.classList.toggle('selected', btn.dataset.table === table);
     });
@@ -312,7 +679,6 @@ function selectTable(table) {
 function selectQuestions(count) {
     gameState.totalQuestions = count;
 
-    // Actualizar botones activos
     DOM.questionsButtons.forEach(btn => {
         btn.classList.toggle('selected', parseInt(btn.dataset.questions) === count);
     });
@@ -333,36 +699,27 @@ function validateStartButton() {
 // ==================== CONTROL DEL JUEGO ====================
 
 function startGame() {
-    // Reiniciar estado del juego
     gameState.isPlaying = true;
     gameState.isPaused = false;
     gameState.correctAnswers = 0;
     gameState.currentStreak = 0;
     gameState.bestStreak = 0;
     gameState.totalAttempts = 0;
+    gameState.hintsUsed = 0;
     gameState.elapsedSeconds = 0;
     gameState.pausedTime = 0;
     gameState.startTime = Date.now();
 
-    // Mostrar pantalla de juego
     showScreen('game');
-
-    // Configurar indicador de operación
     updateOperationIndicator();
-
-    // Actualizar UI inicial
     updateScore();
     updateStreak();
     updateProgress();
     updateTimerDisplay();
-
-    // Iniciar temporizador
+    updateTTSButton();
     startTimer();
-
-    // Generar primera pregunta
     generateQuestion();
 
-    // Enfocar input
     DOM.answerInput.focus();
 }
 
@@ -373,11 +730,9 @@ function pauseGame() {
     gameState.pausedTime = Date.now();
     clearInterval(gameState.timerInterval);
 
-    // Actualizar estadísticas de pausa
     DOM.pauseScore.textContent = `${gameState.correctAnswers} / ${gameState.totalQuestions}`;
     DOM.pauseTime.textContent = formatTime(gameState.elapsedSeconds);
 
-    // Mostrar overlay de pausa
     DOM.pauseOverlay.classList.remove('hidden');
 }
 
@@ -385,12 +740,9 @@ function resumeGame() {
     if (!gameState.isPaused) return;
 
     gameState.isPaused = false;
-
-    // Ajustar tiempo de inicio para compensar la pausa
     const pauseDuration = Date.now() - gameState.pausedTime;
     gameState.startTime += pauseDuration;
 
-    // Ocultar overlay y reanudar temporizador
     DOM.pauseOverlay.classList.add('hidden');
     startTimer();
     DOM.answerInput.focus();
@@ -413,16 +765,57 @@ function quitToMenu() {
     resetSelections();
 }
 
-function endGame() {
+async function endGame() {
     gameState.isPlaying = false;
     clearInterval(gameState.timerInterval);
 
-    // Verificar récord
+    MathMasterAudio.playGameComplete();
+
     const isNewRecord = checkAndSaveRecord();
 
-    // Mostrar resultados
-    displayResults(isNewRecord);
+    // Crear objeto de resultado
+    const gameResult = {
+        operation: gameState.operation,
+        level: gameState.level,
+        totalQuestions: gameState.totalQuestions,
+        correctAnswers: gameState.correctAnswers,
+        totalAttempts: gameState.totalAttempts,
+        bestStreak: gameState.bestStreak,
+        elapsedSeconds: gameState.elapsedSeconds,
+        hintsUsed: gameState.hintsUsed,
+        accuracy: gameState.totalAttempts > 0
+            ? Math.round((gameState.correctAnswers / gameState.totalAttempts) * 100)
+            : 0
+    };
+
+    // Guardar estadísticas y verificar logros si hay usuario
+    let newAchievements = [];
+    if (appState.currentUser && appState.dbReady) {
+        try {
+            const stats = await MathMasterDB.updateStatistics(appState.currentUser.odId, gameResult);
+
+            // Verificar logros
+            newAchievements = MathMasterAchievements.checkAchievements(stats, gameResult);
+
+            // Guardar logros desbloqueados
+            for (const achievement of newAchievements) {
+                await MathMasterDB.unlockAchievement(appState.currentUser.odId, achievement.id);
+            }
+        } catch (e) {
+            console.error('Error guardando estadísticas:', e);
+        }
+    }
+
+    // Leer resultados en voz alta
+    MathMasterAudio.speakResults(gameResult);
+
+    displayResults(isNewRecord, newAchievements);
     showScreen('results');
+
+    // Mostrar notificaciones de logros
+    setTimeout(() => {
+        MathMasterAchievements.showNotifications(DOM.notificationsContainer);
+    }, 500);
 }
 
 function resetSelections() {
@@ -469,7 +862,6 @@ function generateQuestion() {
     } else {
         const level = LEVEL_CONFIG[gameState.level];
 
-        // Verificar características especiales del nivel
         if (level.pemdas) {
             const result = generatePEMDASQuestion(level);
             question = result.question;
@@ -496,13 +888,17 @@ function generateQuestion() {
     gameState.currentQuestion = question;
     gameState.currentAnswer = answer;
 
-    // Mostrar pregunta
     DOM.questionText.textContent = question;
     DOM.answerInput.value = '';
     DOM.answerInput.classList.remove('correct', 'incorrect');
     DOM.feedbackText.textContent = '';
     DOM.feedbackText.className = 'feedback-text';
     DOM.hintText.textContent = '';
+
+    // Leer pregunta si TTS está activo
+    if (MathMasterAudio.ttsEnabled) {
+        MathMasterAudio.speakQuestion(question);
+    }
 }
 
 function generateTableQuestion() {
@@ -514,7 +910,6 @@ function generateTableQuestion() {
     } else {
         factor1 = gameState.selectedTable;
         factor2 = randomInt(1, 10);
-        // Aleatorizar orden 50% del tiempo
         if (Math.random() > 0.5) {
             [factor1, factor2] = [factor2, factor1];
         }
@@ -543,7 +938,6 @@ function generateBasicQuestion(operation, level) {
             let minuend = generateNumber(config.min, config.max, config.decimals);
             let subtrahend = generateNumber(config.min, config.max, config.decimals);
 
-            // Asegurar resultado positivo si no se permiten negativos
             if (!config.allowNegative && subtrahend > minuend) {
                 [minuend, subtrahend] = [subtrahend, minuend];
             }
@@ -565,16 +959,13 @@ function generateBasicQuestion(operation, level) {
             const divisor = randomInt(config.divisor.min, config.divisor.max);
 
             if (config.resultDecimals === 0) {
-                // División exacta
                 const quotient = randomInt(1, 20);
                 const dividend = divisor * quotient;
                 answer = quotient;
                 question = `${formatNumber(dividend)} ÷ ${formatNumber(divisor)} = ?`;
             } else {
-                // División con decimales
                 let dividend, result;
                 if (config.decimalDivisor) {
-                    // Divisor decimal
                     const decDivisor = roundToDecimals(divisor / 10, 1);
                     dividend = randomInt(divisor * 2, divisor * 20);
                     result = roundToDecimals(dividend / decDivisor, config.resultDecimals);
@@ -595,7 +986,7 @@ function generateBasicQuestion(operation, level) {
 }
 
 function generateChainQuestion(level) {
-    const count = randomInt(3, 4); // 3-4 números en la cadena
+    const count = randomInt(3, 4);
     const numbers = [];
     const operations = [];
 
@@ -606,7 +997,6 @@ function generateChainQuestion(level) {
         }
     }
 
-    // Construir pregunta y calcular respuesta
     let questionStr = formatNumber(numbers[0]);
     let answer = numbers[0];
 
@@ -629,7 +1019,7 @@ function generateMixedQuestion(level) {
     let question, answer;
 
     switch (type) {
-        case 1: { // a × b + c
+        case 1: {
             const a = randomInt(2, 10);
             const b = randomInt(2, 10);
             const c = randomInt(1, 20);
@@ -638,7 +1028,7 @@ function generateMixedQuestion(level) {
             break;
         }
 
-        case 2: { // a + b × c
+        case 2: {
             const a = randomInt(1, 20);
             const b = randomInt(2, 10);
             const c = randomInt(2, 10);
@@ -647,7 +1037,7 @@ function generateMixedQuestion(level) {
             break;
         }
 
-        case 3: { // a ÷ b + c o a ÷ b - c
+        case 3: {
             const b = randomInt(2, 10);
             const quotient = randomInt(2, 10);
             const a = b * quotient;
@@ -673,7 +1063,7 @@ function generateAlgebraQuestion(level) {
     let question, answer;
 
     switch (type) {
-        case 1: { // X + a = b
+        case 1: {
             const a = randomInt(1, 50);
             const b = randomInt(a + 1, 100);
             answer = b - a;
@@ -681,7 +1071,7 @@ function generateAlgebraQuestion(level) {
             break;
         }
 
-        case 2: { // a - X = b
+        case 2: {
             const a = randomInt(20, 100);
             const b = randomInt(1, a - 1);
             answer = a - b;
@@ -689,7 +1079,7 @@ function generateAlgebraQuestion(level) {
             break;
         }
 
-        case 3: { // a × X = b
+        case 3: {
             const a = randomInt(2, 12);
             const x = randomInt(1, 15);
             const b = a * x;
@@ -698,7 +1088,7 @@ function generateAlgebraQuestion(level) {
             break;
         }
 
-        case 4: { // X ÷ a = b
+        case 4: {
             const a = randomInt(2, 10);
             const b = randomInt(2, 15);
             answer = a * b;
@@ -715,7 +1105,7 @@ function generatePEMDASQuestion(level) {
     let question, answer;
 
     switch (type) {
-        case 1: { // a × (b + c)
+        case 1: {
             const a = randomInt(2, 8);
             const b = randomInt(2, 10);
             const c = randomInt(2, 10);
@@ -724,7 +1114,7 @@ function generatePEMDASQuestion(level) {
             break;
         }
 
-        case 2: { // (a + b) × c - d
+        case 2: {
             const a = randomInt(2, 8);
             const b = randomInt(2, 8);
             const c = randomInt(2, 6);
@@ -734,18 +1124,18 @@ function generatePEMDASQuestion(level) {
             break;
         }
 
-        case 3: { // a × (b + c) - d ÷ e
+        case 3: {
             const a = randomInt(2, 5);
             const b = randomInt(2, 8);
             const c = randomInt(2, 8);
             const e = randomInt(2, 5);
-            const d = e * randomInt(1, 5); // Asegurar división exacta
+            const d = e * randomInt(1, 5);
             answer = a * (b + c) - d / e;
             question = `${a} × (${b} + ${c}) − ${d} ÷ ${e} = ?`;
             break;
         }
 
-        case 4: { // (a - b) × (c + d)
+        case 4: {
             const a = randomInt(5, 15);
             const b = randomInt(1, a - 1);
             const c = randomInt(2, 8);
@@ -778,7 +1168,6 @@ function checkAnswer() {
 
     gameState.totalAttempts++;
 
-    // Comparar respuestas (con tolerancia para decimales)
     const tolerance = gameState.level >= 4 ? 0.01 : 0.001;
     const isCorrect = Math.abs(userAnswer - gameState.currentAnswer) < tolerance;
 
@@ -794,14 +1183,15 @@ function handleCorrectAnswer() {
     gameState.currentStreak++;
     gameState.bestStreak = Math.max(gameState.bestStreak, gameState.currentStreak);
 
-    // Actualizar UI
+    MathMasterAudio.playCorrect();
+    MathMasterAudio.playStreak(gameState.currentStreak);
+
     updateScore();
     updateStreak();
     updateProgress();
 
     DOM.answerInput.classList.add('correct');
 
-    // Mostrar feedback
     if (gameState.currentStreak >= 5) {
         showFeedback(`¡Excelente! Racha de ${gameState.currentStreak}`, 'correct');
     } else if (gameState.currentStreak >= 3) {
@@ -810,7 +1200,6 @@ function handleCorrectAnswer() {
         showFeedback('¡Correcto!', 'correct');
     }
 
-    // Verificar si terminó el juego
     if (gameState.correctAnswers >= gameState.totalQuestions) {
         setTimeout(endGame, 800);
     } else {
@@ -820,16 +1209,16 @@ function handleCorrectAnswer() {
 
 function handleIncorrectAnswer() {
     gameState.currentStreak = 0;
+    gameState.hintsUsed++;
 
-    // Actualizar UI
+    MathMasterAudio.playIncorrect();
+
     updateStreak();
     DOM.answerInput.classList.add('incorrect');
 
-    // Mostrar feedback con pista
     showFeedback('¡Incorrecto! Inténtalo de nuevo', 'incorrect');
     showHint();
 
-    // Limpiar input después de un momento
     setTimeout(() => {
         DOM.answerInput.classList.remove('incorrect');
         DOM.answerInput.value = '';
@@ -843,7 +1232,6 @@ function showFeedback(message, type) {
 }
 
 function showHint() {
-    // Generar una pista basada en la respuesta correcta
     const answer = gameState.currentAnswer;
     let hint = '';
 
@@ -864,19 +1252,38 @@ function showHint() {
 // ==================== ACTUALIZACIÓN DE UI ====================
 
 function showScreen(screenName) {
-    DOM.selectionScreen.classList.remove('active');
-    DOM.gameScreen.classList.remove('active');
-    DOM.resultsScreen.classList.remove('active');
+    // Ocultar todas las pantallas
+    DOM.loginScreen?.classList.remove('active');
+    DOM.selectionScreen?.classList.remove('active');
+    DOM.gameScreen?.classList.remove('active');
+    DOM.resultsScreen?.classList.remove('active');
+    DOM.statsScreen?.classList.remove('active');
+    DOM.achievementsScreen?.classList.remove('active');
 
+    // Mostrar/ocultar barra superior
+    if (DOM.topBar) {
+        DOM.topBar.style.display = screenName === 'game' ? 'none' : 'flex';
+    }
+
+    // Mostrar pantalla correspondiente
     switch (screenName) {
+        case 'login':
+            DOM.loginScreen?.classList.add('active');
+            break;
         case 'selection':
-            DOM.selectionScreen.classList.add('active');
+            DOM.selectionScreen?.classList.add('active');
             break;
         case 'game':
-            DOM.gameScreen.classList.add('active');
+            DOM.gameScreen?.classList.add('active');
             break;
         case 'results':
-            DOM.resultsScreen.classList.add('active');
+            DOM.resultsScreen?.classList.add('active');
+            break;
+        case 'stats':
+            DOM.statsScreen?.classList.add('active');
+            break;
+        case 'achievements':
+            DOM.achievementsScreen?.classList.add('active');
             break;
     }
 }
@@ -908,7 +1315,17 @@ function updateProgress() {
     DOM.progressBar.style.width = `${progress}%`;
 }
 
-function displayResults(isNewRecord) {
+function updateTTSButton() {
+    if (DOM.speakQuestionBtn) {
+        if (MathMasterAudio.ttsEnabled) {
+            DOM.speakQuestionBtn.classList.remove('hidden');
+        } else {
+            DOM.speakQuestionBtn.classList.add('hidden');
+        }
+    }
+}
+
+function displayResults(isNewRecord, newAchievements = []) {
     const accuracy = gameState.totalAttempts > 0
         ? Math.round((gameState.correctAnswers / gameState.totalAttempts) * 100)
         : 0;
@@ -917,7 +1334,6 @@ function displayResults(isNewRecord) {
         ? Math.round(gameState.elapsedSeconds / gameState.correctAnswers)
         : 0;
 
-    // Título y emoji según rendimiento
     let title, emoji;
     if (accuracy >= 95) {
         title = '¡Perfecto!';
@@ -942,18 +1358,87 @@ function displayResults(isNewRecord) {
     DOM.totalAttempts.textContent = gameState.totalAttempts;
     DOM.avgTime.textContent = `${avgTimePerQuestion}s`;
 
-    // Mostrar badge de récord si corresponde
     if (isNewRecord) {
         DOM.recordSection.classList.remove('hidden');
     } else {
         DOM.recordSection.classList.add('hidden');
     }
+
+    // Mostrar logros desbloqueados
+    if (newAchievements.length > 0 && DOM.unlockedAchievements && DOM.resultsAchievementsList) {
+        DOM.unlockedAchievements.classList.remove('hidden');
+        DOM.resultsAchievementsList.innerHTML = newAchievements.map(a => `
+            <div class="achievement-card">
+                <div class="achievement-icon">${a.icon}</div>
+                <div class="achievement-info">
+                    <div class="achievement-name">${a.name}</div>
+                    <div class="achievement-description">${a.description}</div>
+                </div>
+            </div>
+        `).join('');
+    } else if (DOM.unlockedAchievements) {
+        DOM.unlockedAchievements.classList.add('hidden');
+    }
+}
+
+// ==================== PANTALLAS ADICIONALES ====================
+
+async function showStatsScreen() {
+    if (!appState.currentUser || !appState.dbReady) {
+        alert('Inicia sesión para ver tus estadísticas');
+        return;
+    }
+
+    try {
+        const stats = await MathMasterDB.getStatistics(appState.currentUser.odId);
+        if (!stats) return;
+
+        // Actualizar valores
+        document.getElementById('stat-total-games').textContent = stats.totalGames;
+        document.getElementById('stat-total-correct').textContent = stats.totalCorrect;
+        document.getElementById('stat-accuracy').textContent =
+            stats.totalAttempts > 0
+                ? `${Math.round((stats.totalCorrect / stats.totalAttempts) * 100)}%`
+                : '0%';
+        document.getElementById('stat-best-streak').textContent = stats.bestStreak;
+
+        const hours = Math.floor(stats.totalTime / 3600);
+        const minutes = Math.floor((stats.totalTime % 3600) / 60);
+        document.getElementById('stat-total-time').textContent = `${hours}h ${minutes}m`;
+
+        // Estadísticas por operación
+        const operationStatsContainer = document.getElementById('operation-stats');
+        operationStatsContainer.innerHTML = Object.entries(stats.byOperation)
+            .filter(([, data]) => data.games > 0)
+            .map(([op, data]) => `
+                <div class="operation-stat-row">
+                    <div class="operation-stat-name">
+                        <span class="operation-stat-icon">${OPERATION_ICONS[op] || '?'}</span>
+                        <span>${OPERATION_NAMES[op] || op}</span>
+                    </div>
+                    <div class="operation-stat-value">${data.games} partidas / ${data.correct} correctas</div>
+                </div>
+            `).join('') || '<p class="no-data">Aún no has jugado ninguna partida</p>';
+
+        showScreen('stats');
+    } catch (e) {
+        console.error('Error cargando estadísticas:', e);
+    }
+}
+
+function showAchievementsScreen() {
+    if (DOM.achievementsContent) {
+        DOM.achievementsContent.innerHTML = MathMasterAchievements.renderAchievementsList();
+    }
+    showScreen('achievements');
 }
 
 // ==================== TECLADO NUMÉRICO ====================
 
 function handleNumpad(value) {
     if (!gameState.isPlaying || gameState.isPaused) return;
+
+    MathMasterAudio.playClick();
 
     switch (value) {
         case 'delete':
@@ -994,7 +1479,6 @@ function checkAndSaveRecord() {
     const recordKey = getRecordKey();
     const records = loadRecords();
 
-    // Para este modo, el mejor récord es el menor tiempo
     const currentTime = gameState.elapsedSeconds;
 
     if (!records[recordKey] || currentTime < records[recordKey]) {
@@ -1004,6 +1488,114 @@ function checkAndSaveRecord() {
     }
 
     return false;
+}
+
+// ==================== CONFIGURACIÓN ====================
+
+function loadSettings() {
+    // Tema
+    const savedTheme = localStorage.getItem('mathmaster_theme');
+    if (savedTheme) {
+        setTheme(savedTheme);
+    } else if (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches) {
+        setTheme('light');
+    } else {
+        setTheme('dark');
+    }
+
+    // Alto contraste
+    const highContrast = localStorage.getItem('mathmaster_high_contrast') === 'true';
+    setHighContrast(highContrast);
+    if (DOM.settingHighContrast) {
+        DOM.settingHighContrast.checked = highContrast;
+    }
+
+    // Sincronizar controles de audio
+    if (DOM.settingSound) {
+        DOM.settingSound.checked = MathMasterAudio.enabled;
+    }
+    if (DOM.settingVolume) {
+        DOM.settingVolume.value = MathMasterAudio.sfxVolume * 100;
+    }
+    if (DOM.settingTTS) {
+        DOM.settingTTS.checked = MathMasterAudio.ttsEnabled;
+    }
+
+    // Escuchar cambios del sistema
+    window.matchMedia('(prefers-color-scheme: light)').addEventListener('change', (e) => {
+        if (!localStorage.getItem('mathmaster_theme')) {
+            setTheme(e.matches ? 'light' : 'dark');
+        }
+    });
+}
+
+function openSettings() {
+    // Sincronizar controles con estado actual
+    if (DOM.settingSound) DOM.settingSound.checked = MathMasterAudio.enabled;
+    if (DOM.settingVolume) DOM.settingVolume.value = MathMasterAudio.sfxVolume * 100;
+    if (DOM.settingTTS) DOM.settingTTS.checked = MathMasterAudio.ttsEnabled;
+    if (DOM.settingHighContrast) {
+        DOM.settingHighContrast.checked =
+            document.documentElement.getAttribute('data-high-contrast') === 'true';
+    }
+
+    DOM.settingsModal?.classList.remove('hidden');
+}
+
+function closeSettings() {
+    DOM.settingsModal?.classList.add('hidden');
+}
+
+function toggleTheme() {
+    const currentTheme = document.documentElement.getAttribute('data-theme') || 'dark';
+    const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+    setTheme(newTheme);
+    localStorage.setItem('mathmaster_theme', newTheme);
+}
+
+function setTheme(theme) {
+    if (theme === 'light') {
+        document.documentElement.setAttribute('data-theme', 'light');
+    } else {
+        document.documentElement.removeAttribute('data-theme');
+    }
+}
+
+function setHighContrast(enabled) {
+    if (enabled) {
+        document.documentElement.setAttribute('data-high-contrast', 'true');
+    } else {
+        document.documentElement.removeAttribute('data-high-contrast');
+    }
+    localStorage.setItem('mathmaster_high_contrast', enabled.toString());
+}
+
+// ==================== MODALES ====================
+
+function showConfirmModal(title, message, onConfirm) {
+    if (!DOM.confirmModal) return;
+
+    DOM.confirmTitle.textContent = title;
+    DOM.confirmMessage.textContent = message;
+
+    DOM.confirmModal.classList.remove('hidden');
+
+    // Remover listeners anteriores
+    const newCancelBtn = DOM.confirmCancelBtn.cloneNode(true);
+    const newOkBtn = DOM.confirmOkBtn.cloneNode(true);
+    DOM.confirmCancelBtn.parentNode.replaceChild(newCancelBtn, DOM.confirmCancelBtn);
+    DOM.confirmOkBtn.parentNode.replaceChild(newOkBtn, DOM.confirmOkBtn);
+    DOM.confirmCancelBtn = newCancelBtn;
+    DOM.confirmOkBtn = newOkBtn;
+
+    DOM.confirmCancelBtn.addEventListener('click', () => {
+        DOM.confirmModal.classList.add('hidden');
+    });
+
+    DOM.confirmOkBtn.addEventListener('click', () => {
+        DOM.confirmModal.classList.add('hidden');
+        if (onConfirm) onConfirm();
+    });
 }
 
 // ==================== UTILIDADES ====================
@@ -1037,63 +1629,14 @@ function formatNumber(num) {
     });
 }
 
-// ==================== GESTIÓN DE TEMAS ====================
-
-/**
- * Inicializa el sistema de temas (claro/oscuro)
- * Carga la preferencia guardada o usa la preferencia del sistema
- */
-function initTheme() {
-    const themeToggle = document.getElementById('theme-toggle');
-    const savedTheme = localStorage.getItem('mathmaster_theme');
-
-    // Verificar preferencia guardada o usar preferencia del sistema
-    if (savedTheme) {
-        setTheme(savedTheme);
-    } else if (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches) {
-        setTheme('light');
-    } else {
-        setTheme('dark');
-    }
-
-    // Event listener para el botón de cambio de tema
-    if (themeToggle) {
-        themeToggle.addEventListener('click', toggleTheme);
-    }
-
-    // Escuchar cambios en la preferencia del sistema
-    window.matchMedia('(prefers-color-scheme: light)').addEventListener('change', (e) => {
-        if (!localStorage.getItem('mathmaster_theme')) {
-            setTheme(e.matches ? 'light' : 'dark');
-        }
-    });
-}
-
-/**
- * Cambia entre tema claro y oscuro
- */
-function toggleTheme() {
-    const currentTheme = document.documentElement.getAttribute('data-theme') || 'dark';
-    const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-    setTheme(newTheme);
-    localStorage.setItem('mathmaster_theme', newTheme);
-}
-
-/**
- * Aplica el tema especificado
- * @param {string} theme - 'light' o 'dark'
- */
-function setTheme(theme) {
-    if (theme === 'light') {
-        document.documentElement.setAttribute('data-theme', 'light');
-    } else {
-        document.documentElement.removeAttribute('data-theme');
-    }
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
 }
 
 // ==================== INICIAR ====================
 
 document.addEventListener('DOMContentLoaded', () => {
-    initTheme();
     init();
 });

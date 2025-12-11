@@ -3,7 +3,7 @@
 ## Información del Proyecto
 - **Nombre del Juego:** MathMaster
 - **Desarrollador:** EFC
-- **Versión:** 1.1
+- **Versión:** 2.0
 - **Fecha de Creación:** Diciembre 2024
 - **Última Actualización:** 11 de Diciembre 2024
 
@@ -246,12 +246,105 @@ Se implementó un sistema completo de cambio de tema claro/oscuro con las siguie
 
 ---
 
+## Prompt #3 - Accesibilidad, Audio y Sistema de Progresión
+
+**Fecha:** 11 de Diciembre de 2024
+
+**Rol:** Eres un Líder de Producto (Product Manager) y Arquitecto de Software, especializado en la creación de experiencias de usuario (UX) accesibles y sistemas de persistencia de datos.
+
+**Objetivo:** Elaborar una **Hoja de Ruta de Prioridad Alta** para la próxima actualización del juego, centrada exclusivamente en la **Accesibilidad (Audio/Visual)** y el **Metajuego (Cuentas y Progresión)**. Implementa lo que sea necesario para conseguirlo.
+
+**Decisión Técnica Clave (Persistencia de Datos):**
+Para garantizar la máxima **sencillez en la implementación y el despliegue**, la persistencia de datos (cuentas, estadísticas, logros y guardado) se implementará mediante **IndexedDB** (la base de datos integrada del navegador, equivalente a SQLite para frontend).
+
+---
+
+# Hoja de Ruta de Evolución: Actualización v2.0 - Foco en Accesibilidad y Progresión (IndexedDB)
+
+## I. Accesibilidad y Audio
+
+| Característica | Propósito / Valor Añadido | Especificación Técnica | Prioridad |
+| :--- | :--- | :--- | :--- |
+| **Efectos de Sonido y Feedback Auditivo** | Adaptar el juego para usuarios ciegos o con discapacidad visual. El audio es canal primario de información. | Sonidos distintos para: **Acierto**, **Fallo**, **Selección**, **Hover/Foco**. Sintetizador de voz Web Speech API para audiodescripción. Control de volumen y mute. | Alta |
+| **Modo de Alto Contraste** | Mejorar la ergonomía visual para usuarios con baja visión. | Modo Alto Contraste: letras amarillas/blancas sobre fondo negro puro (#000). Bordes gruesos y visibles. Toggle en configuración. | Alta |
+| **Navegación por Teclado** | Permitir uso completo sin ratón para usuarios con movilidad reducida. | Focus visible en todos los elementos interactivos. Orden de tabulación lógico. Atajos de teclado (Enter para verificar). | Alta |
+
+## II. Metajuego y Persistencia de Progresión (IndexedDB)
+
+| Característica | Propósito / Valor Añadido | Especificación Técnica | Prioridad |
+| :--- | :--- | :--- | :--- |
+| **Sistema de Cuentas de Usuario** | Permitir múltiples usuarios en el mismo dispositivo con progresión separada. | **ObjectStore `users`**: `userId`, `username`, `createdAt`, `settings`. Selector de perfil en menú principal. Sin contraseña (dispositivo local). | Alta |
+| **Guardado de Partida** | Continuar donde se dejó la última partida. | **ObjectStore `savedGames`**: `odId`, `gameState` (JSON con operación, nivel, progreso, tiempo). Auto-guardado al pausar. | Alta |
+| **Estadísticas Históricas** | Fomentar retención mostrando progresión a lo largo del tiempo. | **ObjectStore `statistics`**: `odId`, `totalGames`, `totalCorrect`, `totalAttempts`, `bestStreak`, `totalTime`, `byOperation`, `byLevel`. | Media |
+| **Sistema de Logros** | Motivación a largo plazo mediante recompensas por hitos. | **ObjectStore `achievements`**: `odId`, `unlockedAchievements[]`. 10 logros iniciales con iconos y descripciones. | Media |
+
+## III. Logros Iniciales Propuestos
+
+| ID | Nombre | Descripción | Condición |
+| :--- | :--- | :--- | :--- |
+| `first_correct` | Primer Paso | Responde correctamente tu primera pregunta | 1 acierto total |
+| `streak_5` | En Racha | Consigue una racha de 5 respuestas correctas | Racha de 5 |
+| `streak_10` | Imparable | Consigue una racha de 10 respuestas correctas | Racha de 10 |
+| `perfect_game` | Perfeccionista | Completa un desafío sin fallar ninguna pregunta | 100% precisión en partida |
+| `games_10` | Dedicado | Completa 10 partidas | 10 partidas completadas |
+| `games_50` | Veterano | Completa 50 partidas | 50 partidas completadas |
+| `level_5` | Intermedio | Completa una partida en nivel 5 o superior | Nivel >= 5 completado |
+| `level_10` | Maestro | Completa una partida en nivel 10 | Nivel 10 completado |
+| `speed_demon` | Velocista | Completa un desafío de 30 preguntas en menos de 3 minutos | Tiempo < 180s |
+| `all_operations` | Polivalente | Completa al menos una partida de cada operación | 5 operaciones diferentes |
+
+## IV. Arquitectura de Archivos
+
+```
+MathMaster-EFC/
+├── index.html          (+ pantalla de login/perfil, configuración)
+├── styles.css          (+ estilos alto contraste, modal config)
+├── game.js             (+ integración audio, achievements)
+├── database.js         (NUEVO: módulo IndexedDB)
+├── audio.js            (NUEVO: módulo de audio y TTS)
+├── achievements.js     (NUEVO: sistema de logros)
+├── sounds/             (NUEVO: carpeta de efectos de sonido)
+│   ├── correct.mp3
+│   ├── incorrect.mp3
+│   ├── click.mp3
+│   └── achievement.mp3
+└── prompts.md
+```
+
+---
+
+## Respuesta al Prompt #3
+
+### Implementación Realizada
+
+Se implementó el sistema completo de accesibilidad, audio y progresión:
+
+#### Archivos Nuevos Creados:
+1. **`database.js`** - Módulo de persistencia con IndexedDB
+2. **`audio.js`** - Sistema de audio con efectos y Text-to-Speech
+3. **`achievements.js`** - Sistema de logros con 10 achievements iniciales
+
+#### Archivos Modificados:
+1. **`index.html`** - Pantalla de login, configuración, logros
+2. **`styles.css`** - Modo alto contraste, estilos nuevas pantallas
+3. **`game.js`** - Integración con nuevos módulos
+
+---
+
+## Historial de Cambios
+
+| Fecha | Versión | Descripción |
+|-------|---------|-------------|
+| 11/12/2024 | 1.0 | Creación inicial del juego: Modo Desafío por Puntuación Fija, 10 niveles, sistema de reintentos |
+| 11/12/2024 | 1.1 | Implementación de sistema de temas claro/oscuro con botón toggle |
+| 11/12/2024 | 2.0 | Sistema de accesibilidad (audio, alto contraste), cuentas de usuario, estadísticas y logros con IndexedDB |
+
+---
+
 ## Notas para Futuras Actualizaciones
 
-- Considerar añadir efectos de sonido
-- Implementar sistema de logros/medallas
 - Añadir modo supervivencia
-- Integrar sistema de cuentas de usuario
-- Añadir estadísticas históricas
 - Implementar modo multijugador local
-- Añadir animaciones más elaboradas al acertar/fallar
+- Sincronización en la nube (opcional)
+- Más logros y desafíos especiales
+- Tablas de clasificación locales
