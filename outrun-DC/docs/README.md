@@ -106,3 +106,8 @@ Este proyecto es un juego educativo desarrollado para fines de aprendizaje.
 ---
 
 **¡Disfruta conduciendo a toda velocidad! 🏁**
+
+## 📝 Agradecimientos
+- https://github.com/erendn/outrun-js
+- https://github.com/alexyu132/outrun-js
+- https://github.com/NathanielWroblewski/outrun
