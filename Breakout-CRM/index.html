@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Breakout Game</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @keyframes bonusPulse {
+            0% {
+                transform: translate(-50%, -50%) scale(0.5);
+                opacity: 0;
+            }
+            50% {
+                transform: translate(-50%, -50%) scale(1.2);
+                opacity: 1;
+            }
+            100% {
+                transform: translate(-50%, -50%) scale(1);
+                opacity: 0.8;
+            }
+        }
+        .animate-bonus-pulse {
+            animation: bonusPulse 0.5s ease-out;
+        }
+    </style>
+</head>
+<body class="flex flex-col justify-center items-center min-h-screen text-white font-sans" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+    <div class="bg-black/30 p-5 rounded-2xl shadow-2xl text-center">
+        <h1 class="mb-5 text-4xl font-bold drop-shadow-lg">🎮 BREAKOUT</h1>
+        <div class="flex justify-around mb-4 text-xl font-bold">
+            <div class="bg-white/20 px-5 py-2.5 rounded-xl backdrop-blur-md">Puntuación: <span id="score">0</span></div>
+            <div class="bg-white/20 px-5 py-2.5 rounded-xl backdrop-blur-md">Vidas: <span id="lives">3</span></div>
+            <div class="bg-white/20 px-5 py-2.5 rounded-xl backdrop-blur-md">Nivel: <span id="level">1</span></div>
+        </div>
+        <div class="bg-white/20 border-2 border-white px-4 py-1.5 rounded-xl text-sm mt-2.5 inline-block" id="bonusCounter">
+            🔥 Racha: <span id="consecutiveCount">0</span> bloques
+        </div>
+        <canvas id="gameCanvas" width="800" height="600" class="bg-black border-4 border-white rounded-xl block shadow-lg"></canvas>
+        <div class="mt-4 text-sm opacity-90">
+            Usa las flechas ← → o mueve el mouse para controlar la paleta
+        </div>
+    </div>
+
+    <div class="hidden fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-5xl font-bold text-yellow-400 z-50 animate-bonus-pulse drop-shadow-[0_0_20px_rgba(249,202,36,0.8)]" id="bonusIndicator">BONUS!</div>
+
+    <div class="hidden fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-black/90 p-10 rounded-2xl text-center z-[100] shadow-2xl" id="gameOver">
+        <h2 class="text-4xl mb-5 text-red-400" id="gameOverTitle">¡Juego Terminado!</h2>
+        <p class="text-xl mb-8" id="gameOverMessage"></p>
+        <button onclick="restartGame()" class="text-white border-none px-10 py-4 text-xl rounded-xl cursor-pointer transition-transform duration-200 hover:scale-105 active:scale-95" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">Jugar de Nuevo</button>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const scoreElement = document.getElementById('score');
+        const livesElement = document.getElementById('lives');
+        const levelElement = document.getElementById('level');
+        const gameOverDiv = document.getElementById('gameOver');
+        const gameOverTitle = document.getElementById('gameOverTitle');
+        const gameOverMessage = document.getElementById('gameOverMessage');
+        const bonusCounter = document.getElementById('bonusCounter');
+        const consecutiveCountElement = document.getElementById('consecutiveCount');
+        const bonusIndicator = document.getElementById('bonusIndicator');
+
+        // Game state
+        let score = 0;
+        let lives = 3;
+        let level = 1;
+        let gameRunning = true;
+        let consecutiveBricks = 0; // Contador de bloques rotos consecutivos
+        const BONUS_THRESHOLD = 5; // Bloques necesarios para activar bonus
+
+        // Paddle
+        const paddle = {
+            x: canvas.width / 2 - 75,
+            y: canvas.height - 30,
+            width: 150,
+            height: 15,
+            speed: 8,
+            dx: 0
+        };
+
+        // Ball
+        const ball = {
+            x: canvas.width / 2,
+            y: canvas.height / 2,
+            radius: 10,
+            dx: 4,
+            dy: -4,
+            speed: 4
+        };
+
+        // Bricks
+        const brickConfig = {
+            rows: 5,
+            cols: 10,
+            width: 75,
+            height: 25,
+            padding: 5,
+            offsetTop: 60,
+            offsetLeft: 25
+        };
+
+        let bricks = [];
+
+        // Initialize bricks
+        function initBricks() {
+            bricks = [];
+            const colors = ['#ff6b6b', '#4ecdc4', '#45b7d1', '#f9ca24', '#6c5ce7'];
+            
+            for (let r = 0; r < brickConfig.rows; r++) {
+                for (let c = 0; c < brickConfig.cols; c++) {
+                    bricks.push({
+                        x: c * (brickConfig.width + brickConfig.padding) + brickConfig.offsetLeft,
+                        y: r * (brickConfig.height + brickConfig.padding) + brickConfig.offsetTop,
+                        width: brickConfig.width,
+                        height: brickConfig.height,
+                        color: colors[r % colors.length],
+                        visible: true
+                    });
+                }
+            }
+        }
+
+        // Draw functions
+        function drawPaddle() {
+            ctx.fillStyle = '#fff';
+            ctx.fillRect(paddle.x, paddle.y, paddle.width, paddle.height);
+            ctx.strokeStyle = '#667eea';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(paddle.x, paddle.y, paddle.width, paddle.height);
+        }
+
+        function drawBall() {
+            ctx.beginPath();
+            ctx.arc(ball.x, ball.y, ball.radius, 0, Math.PI * 2);
+            ctx.fillStyle = '#fff';
+            ctx.fill();
+            ctx.strokeStyle = '#667eea';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+            ctx.closePath();
+        }
+
+        function drawBricks() {
+            bricks.forEach(brick => {
+                if (brick.visible) {
+                    ctx.fillStyle = brick.color;
+                    ctx.fillRect(brick.x, brick.y, brick.width, brick.height);
+                    ctx.strokeStyle = '#fff';
+                    ctx.lineWidth = 1;
+                    ctx.strokeRect(brick.x, brick.y, brick.width, brick.height);
+                }
+            });
+        }
+
+        // Update functions
+        function updatePaddle() {
+            paddle.x += paddle.dx;
+
+            // Boundary checking
+            if (paddle.x < 0) {
+                paddle.x = 0;
+            } else if (paddle.x + paddle.width > canvas.width) {
+                paddle.x = canvas.width - paddle.width;
+            }
+        }
+
+        function updateBall() {
+            ball.x += ball.dx;
+            ball.y += ball.dy;
+
+            // Wall collision (left and right)
+            if (ball.x + ball.radius > canvas.width || ball.x - ball.radius < 0) {
+                ball.dx = -ball.dx;
+            }
+
+            // Top wall collision
+            if (ball.y - ball.radius < 0) {
+                ball.dy = -ball.dy;
+            }
+
+            // Bottom wall collision (lose life)
+            if (ball.y + ball.radius > canvas.height) {
+                lives--;
+                livesElement.textContent = lives;
+                // Resetear contador de bloques consecutivos al perder vida
+                consecutiveBricks = 0;
+                updateBonusCounter();
+                
+                if (lives <= 0) {
+                    endGame(false);
+                } else {
+                    resetBall();
+                }
+            }
+
+            // Paddle collision
+            if (
+                ball.y + ball.radius > paddle.y &&
+                ball.x > paddle.x &&
+                ball.x < paddle.x + paddle.width &&
+                ball.dy > 0
+            ) {
+                // Resetear contador de bloques consecutivos al golpear la paleta
+                consecutiveBricks = 0;
+                updateBonusCounter();
+                
+                // Calculate hit position on paddle (-1 to 1)
+                const hitPos = (ball.x - (paddle.x + paddle.width / 2)) / (paddle.width / 2);
+                ball.dy = -Math.abs(ball.dy);
+                ball.dx = hitPos * ball.speed;
+            }
+
+            // Brick collision
+            bricks.forEach(brick => {
+                if (brick.visible) {
+                    if (
+                        ball.x + ball.radius > brick.x &&
+                        ball.x - ball.radius < brick.x + brick.width &&
+                        ball.y + ball.radius > brick.y &&
+                        ball.y - ball.radius < brick.y + brick.height
+                    ) {
+                        brick.visible = false;
+                        
+                        // Incrementar contador de bloques consecutivos
+                        consecutiveBricks++;
+                        updateBonusCounter();
+                        
+                        // Calcular puntos base
+                        let pointsEarned = 10;
+                        
+                        // Aplicar bonus si se rompen más de 5 bloques seguidos
+                        if (consecutiveBricks > BONUS_THRESHOLD) {
+                            const bonusMultiplier = Math.floor(consecutiveBricks / BONUS_THRESHOLD);
+                            const bonusPoints = bonusMultiplier * 25; // 25 puntos extra por cada 5 bloques
+                            pointsEarned += bonusPoints;
+                            
+                            // Mostrar indicador de bonus
+                            showBonusIndicator(bonusMultiplier, bonusPoints);
+                        }
+                        
+                        score += pointsEarned;
+                        scoreElement.textContent = score;
+                        ball.dy = -ball.dy;
+
+                        // Check if all bricks are destroyed
+                        if (bricks.every(b => !b.visible)) {
+                            // Resetear contador al pasar de nivel (nuevo nivel = nueva oportunidad)
+                            consecutiveBricks = 0;
+                            updateBonusCounter();
+                            level++;
+                            levelElement.textContent = level;
+                            ball.speed += 0.5;
+                            ball.dx = ball.dx > 0 ? ball.speed : -ball.speed;
+                            ball.dy = -ball.speed;
+                            initBricks();
+                            resetBall();
+                        }
+                    }
+                }
+            });
+        }
+
+        function resetBall() {
+            ball.x = canvas.width / 2;
+            ball.y = canvas.height / 2;
+            ball.dx = (Math.random() > 0.5 ? 1 : -1) * ball.speed;
+            ball.dy = -ball.speed;
+        }
+
+        // Funciones de bonus
+        function updateBonusCounter() {
+            // Siempre mostrar el contador, incluso cuando está en 0
+            consecutiveCountElement.textContent = consecutiveBricks;
+            
+            // Cambiar color según la racha usando Tailwind
+            if (consecutiveBricks > BONUS_THRESHOLD) {
+                bonusCounter.className = 'bg-yellow-400/50 border-2 border-yellow-400 px-4 py-1.5 rounded-xl text-sm mt-2.5 inline-block';
+            } else {
+                bonusCounter.className = 'bg-white/20 border-2 border-white px-4 py-1.5 rounded-xl text-sm mt-2.5 inline-block';
+            }
+        }
+
+        function showBonusIndicator(multiplier, bonusPoints) {
+            bonusIndicator.textContent = `BONUS x${multiplier}! +${bonusPoints} puntos`;
+            bonusIndicator.classList.remove('hidden');
+            bonusIndicator.classList.add('animate-bonus-pulse');
+            
+            // Ocultar después de la animación
+            setTimeout(() => {
+                bonusIndicator.classList.add('hidden');
+                bonusIndicator.classList.remove('animate-bonus-pulse');
+            }, 500);
+        }
+
+        // Game loop
+        function gameLoop() {
+            if (!gameRunning) return;
+
+            // Clear canvas
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Update
+            updatePaddle();
+            updateBall();
+
+            // Draw
+            drawBricks();
+            drawPaddle();
+            drawBall();
+
+            requestAnimationFrame(gameLoop);
+        }
+
+        // Event listeners
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') {
+                paddle.dx = -paddle.speed;
+            } else if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') {
+                paddle.dx = paddle.speed;
+            }
+        });
+
+        document.addEventListener('keyup', (e) => {
+            if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A' ||
+                e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') {
+                paddle.dx = 0;
+            }
+        });
+
+        canvas.addEventListener('mousemove', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            const mouseX = e.clientX - rect.left;
+            paddle.x = mouseX - paddle.width / 2;
+
+            // Boundary checking
+            if (paddle.x < 0) {
+                paddle.x = 0;
+            } else if (paddle.x + paddle.width > canvas.width) {
+                paddle.x = canvas.width - paddle.width;
+            }
+        });
+
+        // Game over functions
+        function endGame(won) {
+            gameRunning = false;
+            gameOverDiv.classList.remove('hidden');
+            
+            if (won) {
+                gameOverTitle.textContent = '¡Felicidades!';
+                gameOverMessage.textContent = `Has completado el nivel ${level} con ${score} puntos!`;
+            } else {
+                gameOverTitle.textContent = '¡Juego Terminado!';
+                gameOverMessage.textContent = `Puntuación final: ${score} puntos`;
+            }
+        }
+
+        function restartGame() {
+            score = 0;
+            lives = 3;
+            level = 1;
+            gameRunning = true;
+            ball.speed = 4;
+            consecutiveBricks = 0;
+            
+            scoreElement.textContent = score;
+            livesElement.textContent = lives;
+            levelElement.textContent = level;
+            
+            gameOverDiv.classList.add('hidden');
+            bonusIndicator.classList.add('hidden');
+            updateBonusCounter(); // Actualizar el contador de racha
+            
+            initBricks();
+            resetBall();
+            paddle.x = canvas.width / 2 - 75;
+            paddle.dx = 0;
+            
+            gameLoop();
+        }
+
+        // Initialize game
+        initBricks();
+        resetBall();
+        updateBonusCounter(); // Inicializar el contador de racha
+        gameLoop();
+    </script>
+</body>
+</html>
+
