@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Retro Racer</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Roboto:wght@400;700&display=swap"
+        rel="stylesheet">
+</head>
+
+<body>
+
+    <div id="game-container">
+        <canvas id="gameCanvas"></canvas>
+
+        <!-- HUD: Pole Position Style -->
+        <div id="hud">
+            <div class="hud-section left">
+                <div class="hud-row"><span class="label">TOP</span> <span id="top-score">20000</span></div>
+                <div class="hud-row"><span class="label">SCORE</span> <span id="score-display">0</span></div>
+            </div>
+            <div class="hud-section center">
+                <div class="hud-row label">TIME</div>
+                <div class="hud-row" id="time-display">0</div>
+            </div>
+            <div class="hud-section right">
+                <div class="hud-row"><span class="label">LAP</span> <span id="lap-display">1</span></div>
+                <div class="hud-row"><span class="label">SPEED</span> <span id="speed-display">0</span> <span
+                        class="unit">km</span></div>
+            </div>
+        </div>
+
+        <!-- Message Overlay (Checkpoints, etc) -->
+        <div id="message-overlay" class="hidden">
+            <span id="message-text">PREPARE!</span>
+        </div>
+
+        <!-- Start Lights Overlay -->
+        <div id="start-lights" class="hidden">
+            <div class="traffic-light">
+                <div class="light red"></div>
+                <div class="light yellow"></div>
+                <div class="light green"></div>
+            </div>
+        </div>
+
+        <!-- Main Menu -->
+        <div id="main-menu" class="screen">
+            <h1 class="game-title">POLE POSITION <span class="year">1982</span></h1>
+            <p>QUALIFYING LAP</p>
+            <div class="menu-options">
+                <button class="menu-btn" data-time="60">TIME TRIAL (1:00)</button>
+                <button class="menu-btn" data-time="120">GRAND PRIX (2:00)</button>
+                <button class="menu-btn" data-time="300">ENDURANCE (5:00)</button>
+            </div>
+            <button class="menu-btn secondary" id="settings-btn">CONTROLS</button>
+        </div>
+
+        <!-- Settings Menu -->
+        <div id="settings-menu" class="screen hidden">
+            <h1>CONTROLS</h1>
+            <div class="setting-row">
+                <span>STEER LEFT:</span>
+                <button class="key-bind-btn" id="btn-key-left">LEFT</button>
+            </div>
+            <div class="setting-row">
+                <span>STEER RIGHT:</span>
+                <button class="key-bind-btn" id="btn-key-right">RIGHT</button>
+            </div>
+            <div class="setting-row">
+                <span>PAUSE GAME:</span>
+                <span class="key-static">P</span>
+            </div>
+            <div class="setting-row">
+                <span>EXIT / MENU:</span>
+                <span class="key-static">ESC</span>
+            </div>
+            <div class="setting-row">
+                <span>ACCELERATION IS AUTOMATIC</span>
+            </div>
+            <button class="menu-btn secondary" id="back-btn">RETURN</button>
+        </div>
+
+        <!-- Pause Overlay -->
+        <div id="pause-menu" class="screen hidden" style="background: rgba(0,0,0,0.5);">
+            <h1 class="blink">PAUSED</h1>
+            <p>PRESS 'P' TO RESUME</p>
+            <p>PRESS 'ESC' TO QUIT</p>
+        </div>
+
+        <!-- Game Over Screen -->
+        <div id="game-over" class="screen hidden">
+            <h1 id="end-title">GAME OVER</h1>
+            <p>FINAL SCORE: <span id="final-score">0</span></p>
+            <p>DISTANCE: <span id="final-dist">0</span> km</p>
+            <p id="performance-msg"></p>
+            <button class="menu-btn" onclick="location.reload()">INSERT COIN</button>
+        </div>
+
+        <!-- Countdown Overlay (Old one removed, using lights) -->
+    </div>
+
+    <script src="script.js"></script>
+</body>
+
+</html>
