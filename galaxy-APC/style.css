@@ -74,10 +74,9 @@ body {
     transform: translateX(-50%);
     width: 40px;
     height: 40px;
-    /* Fallback: triángulo verde si no hay imagen */
-    border-left: 20px solid transparent;
-    border-right: 20px solid transparent;
-    border-bottom: 40px solid #00ff00;
+    /* Fallback: color de fondo verde si no hay imagen */
+    background-color: #00ff00;
+    clip-path: polygon(50% 0%, 0% 100%, 100% 100%);
     /* Imagen de sprite (si está disponible) */
     background-image: url('assets/player.png');
     background-size: contain;

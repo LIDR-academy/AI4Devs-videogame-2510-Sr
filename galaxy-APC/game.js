@@ -5,6 +5,7 @@
 
 /**
  * Gestor de audio para efectos de sonido
+ * Usa un pool de objetos Audio para evitar problemas de memoria
  */
 const audioManager = {
     sounds: {
@@ -12,23 +13,47 @@ const audioManager = {
         enemyDestroyed: 'assets/enemy_destroyed.mp3',
         gameOver: 'assets/game_over.mp3'
     },
+    audioPool: {},
+    poolSize: 5,
     
     /**
-     * Reproduce un sonido
+     * Inicializa el pool de objetos Audio
+     */
+    initPool() {
+        Object.keys(this.sounds).forEach(soundName => {
+            this.audioPool[soundName] = [];
+            for (let i = 0; i < this.poolSize; i++) {
+                const audio = new Audio(this.sounds[soundName]);
+                audio.volume = 0.5;
+                audio.preload = 'auto';
+                this.audioPool[soundName].push(audio);
+            }
+        });
+    },
+    
+    /**
+     * Reproduce un sonido usando el pool de Audio objects
      * @param {string} soundName - Nombre del sonido a reproducir
      */
     playSound(soundName) {
         try {
-            const soundPath = this.sounds[soundName];
-            if (soundPath) {
-                const audio = new Audio(soundPath);
-                audio.volume = 0.5; // Ajustar volumen
-                // Precargar el audio para mejor compatibilidad
-                audio.preload = 'auto';
-                audio.play().catch(error => {
+            const pool = this.audioPool[soundName];
+            if (pool && pool.length > 0) {
+                // Buscar un audio disponible (pausado o terminado)
+                const audio = pool.find(a => a.paused || a.ended) || pool[0];
+                audio.currentTime = 0; // Reiniciar desde el inicio
+                audio.play().catch(() => {
                     // Silenciar errores si el archivo no existe o no se puede reproducir
-                    console.log(`No se pudo reproducir el sonido: ${soundName}`, error);
                 });
+            } else {
+                // Fallback: crear nuevo audio si el pool no está inicializado
+                const soundPath = this.sounds[soundName];
+                if (soundPath) {
+                    const audio = new Audio(soundPath);
+                    audio.volume = 0.5;
+                    audio.preload = 'auto';
+                    audio.play().catch(() => {});
+                }
             }
         } catch (error) {
             // Manejar errores silenciosamente
@@ -36,6 +61,9 @@ const audioManager = {
         }
     }
 };
+
+// Contador global para identificar loops del juego y evitar múltiples instancias
+let gameLoopId = 0;
 
 // Estado del juego
 const gameState = {
@@ -61,6 +89,9 @@ const gameState = {
     currentLevel: 1, // Nivel actual del juego
     levelComplete: false, // Flag para indicar si el nivel está completo
     showingLevelMessage: false, // Flag para controlar mensaje de nivel
+    lastShotTime: 0, // Timestamp del último disparo para cooldown
+    shootCooldown: 150, // Cooldown entre disparos en milisegundos
+    lifeLostThisFrame: false, // Flag para evitar perder múltiples vidas en un frame
     keys: {}, // Objeto para rastrear qué teclas están presionadas
     gameArea: null,
     isRunning: true
@@ -114,13 +145,17 @@ function initGame() {
         startButton.addEventListener('click', startGame);
     }
     
-    // También permitir iniciar con tecla Enter
-    document.addEventListener('keydown', (event) => {
+    // También permitir iniciar con tecla Enter (usando función nombrada para posible cleanup)
+    function handleEnterKey(event) {
         const startMenu = document.getElementById('start-menu');
         if (event.code === 'Enter' && startMenu && startMenu.style.display !== 'none') {
             startGame();
         }
-    });
+    }
+    document.addEventListener('keydown', handleEnterKey);
+    
+    // Inicializar pool de audio
+    audioManager.initPool();
     
     console.log('Juego inicializado correctamente');
 }
@@ -156,8 +191,10 @@ function startGame() {
     // Reiniciar estado
     gameState.isRunning = true;
     
-    // Iniciar el loop principal del juego
-    gameLoop();
+    // Incrementar gameLoopId para invalidar loops anteriores
+    gameLoopId++;
+    // Iniciar el loop principal del juego con el nuevo ID
+    gameLoop(gameLoopId);
 }
 
 /**
@@ -221,6 +258,13 @@ function handlePlayerMovement() {
  * Crea un nuevo proyectil y lo añade al juego
  */
 function shoot() {
+    // Verificar cooldown para evitar spam de disparos
+    const now = Date.now();
+    if (now - gameState.lastShotTime < gameState.shootCooldown) {
+        return;
+    }
+    gameState.lastShotTime = now;
+    
     // Crear elemento div para el proyectil
     const projectile = document.createElement('div');
     projectile.className = 'projectile';
@@ -387,6 +431,9 @@ function updateEnemies() {
     let minX = Infinity;
     let maxX = -Infinity;
     
+    // Resetear flag de vida perdida para este frame
+    gameState.lifeLostThisFrame = false;
+    
     // Encontrar los límites horizontales de los enemigos
     gameState.enemies.forEach(enemy => {
         if (enemy.x < minX) minX = enemy.x;
@@ -423,8 +470,11 @@ function updateEnemies() {
             // Eliminar el enemigo
             enemy.element.remove();
             gameState.enemies.splice(i, 1);
-            // El jugador pierde una vida
-            loseLife();
+            // El jugador pierde una vida (solo una vez por frame)
+            if (!gameState.lifeLostThisFrame) {
+                loseLife();
+                gameState.lifeLostThisFrame = true;
+            }
         }
     }
 }
@@ -619,9 +669,11 @@ function completeLevel() {
             // Iniciar siguiente nivel
             startLevel(gameState.currentLevel + 1);
             
-            // Reiniciar el loop
+            // Incrementar gameLoopId para invalidar loops anteriores
+            gameLoopId++;
+            // Reiniciar el loop con el nuevo ID
             gameState.isRunning = true;
-            gameLoop();
+            gameLoop(gameLoopId);
         }, 2500);
     }, 2500);
 }
@@ -694,16 +746,13 @@ function resetGame() {
         levelMessage.remove();
     }
     
-    // Limpiar arrays
+    // Limpiar DOM de elementos dinámicos usando referencias de arrays antes de limpiarlos
+    gameState.projectiles.forEach(proj => proj.element.remove());
+    gameState.enemies.forEach(enemy => enemy.element.remove());
+    
+    // Limpiar arrays después de limpiar DOM
     gameState.projectiles = [];
     gameState.enemies = [];
-    
-    // Limpiar DOM de elementos dinámicos
-    const projectiles = gameState.gameArea.querySelectorAll('.projectile');
-    projectiles.forEach(proj => proj.remove());
-    
-    const enemies = gameState.gameArea.querySelectorAll('.enemy');
-    enemies.forEach(enemy => enemy.remove());
     
     // Reiniciar estado del juego
     gameState.score = 0;
@@ -727,14 +776,22 @@ function resetGame() {
     gameState.player.position = (gameAreaWidth - gameState.player.width) / 2;
     updatePlayerPosition();
     
-    // Reiniciar el loop
-    gameLoop();
+    // Incrementar gameLoopId para invalidar loops anteriores
+    gameLoopId++;
+    // Reiniciar el loop con el nuevo ID
+    gameLoop(gameLoopId);
 }
 
 /**
  * Loop principal del juego - se ejecuta continuamente
+ * @param {number} loopId - ID del loop para evitar múltiples instancias concurrentes
  */
-function gameLoop() {
+function gameLoop(loopId) {
+    // Detener si este es un loop obsoleto
+    if (loopId !== undefined && loopId !== gameLoopId) {
+        return;
+    }
+    
     if (!gameState.isRunning) {
         return;
     }
@@ -759,8 +816,8 @@ function gameLoop() {
         completeLevel();
     }
     
-    // Continuar el loop (aproximadamente 60 FPS)
-    requestAnimationFrame(gameLoop);
+    // Continuar el loop (aproximadamente 60 FPS) con el mismo loopId
+    requestAnimationFrame(() => gameLoop(loopId));
 }
 
 // Inicializar el juego cuando se carga la página

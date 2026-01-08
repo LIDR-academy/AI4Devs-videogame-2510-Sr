@@ -439,7 +439,7 @@ Archivos necesarios:
 
 ### Archivos Generados:
 
-```
+```text
 assets/
 ├── player.png          (nave del jugador)
 ├── enemy.png           (nave enemiga)
