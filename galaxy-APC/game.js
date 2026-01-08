@@ -126,6 +126,17 @@ function hideStartMenu() {
 }
 
 /**
+ * Maneja la tecla Enter para iniciar el juego desde el menú
+ * Función nombrada para permitir cleanup del event listener
+ */
+function handleEnterKey(event) {
+    const startMenu = document.getElementById('start-menu');
+    if (event.code === 'Enter' && startMenu && startMenu.style.display !== 'none') {
+        startGame();
+    }
+}
+
+/**
  * Inicializa el juego cuando se carga la página
  */
 function initGame() {
@@ -145,13 +156,7 @@ function initGame() {
         startButton.addEventListener('click', startGame);
     }
     
-    // También permitir iniciar con tecla Enter (usando función nombrada para posible cleanup)
-    function handleEnterKey(event) {
-        const startMenu = document.getElementById('start-menu');
-        if (event.code === 'Enter' && startMenu && startMenu.style.display !== 'none') {
-            startGame();
-        }
-    }
+    // También permitir iniciar con tecla Enter (usando función nombrada para cleanup)
     document.addEventListener('keydown', handleEnterKey);
     
     // Inicializar pool de audio
@@ -164,6 +169,9 @@ function initGame() {
  * Inicia el juego (oculta menú y comienza el loop)
  */
 function startGame() {
+    // Remover el listener de Enter para evitar acumulación de handlers
+    document.removeEventListener('keydown', handleEnterKey);
+    
     hideStartMenu();
     
     // Inicializar puntaje, vidas y nivel
