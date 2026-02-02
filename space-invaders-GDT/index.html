@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Space Invaders - Vanilla JS</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="game-container">
+        <div class="header">
+            <h1>SPACE INVADERS</h1>
+            <div class="stats">
+                <div class="score">Score: <span id="score">0</span></div>
+                <div class="lives">Lives: <span id="lives">3</span></div>
+                <div class="level">Level: <span id="level">1</span></div>
+            </div>
+        </div>
+
+        <canvas id="gameCanvas" width="800" height="600"></canvas>
+
+        <div class="controls">
+            <div class="control-info">
+                <p><strong>Controls:</strong></p>
+                <p>← → Arrow Keys: Move</p>
+                <p>SPACE: Shoot</p>
+                <p>P: Pause</p>
+                <p>R: Restart (when game over)</p>
+            </div>
+            <button id="startBtn" class="btn">Start Game</button>
+            <button id="pauseBtn" class="btn" disabled>Pause</button>
+        </div>
+
+        <div id="gameOverScreen" class="overlay hidden">
+            <div class="overlay-content">
+                <h2>GAME OVER</h2>
+                <p>Final Score: <span id="finalScore">0</span></p>
+                <button id="restartBtn" class="btn">Play Again</button>
+            </div>
+        </div>
+
+        <div id="levelCompleteScreen" class="overlay hidden">
+            <div class="overlay-content">
+                <h2>LEVEL COMPLETE!</h2>
+                <p>Score: <span id="levelScore">0</span></p>
+                <button id="nextLevelBtn" class="btn">Next Level</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Entry Point with ES6 Modules -->
+    <script type="module" src="js/main.js"></script>
+</body>
+</html>
