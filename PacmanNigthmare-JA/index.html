@@ -1,0 +1,644 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pac-Man Inverso - Atrapa a Pac-Man</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: #1a1a2e;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            color: #fff;
+        }
+
+        h1 {
+            margin: 20px 0;
+            font-size: 2.5em;
+            text-shadow: 0 0 10px #00d9ff;
+        }
+
+        .info-panel {
+            display: flex;
+            gap: 30px;
+            margin-bottom: 20px;
+            font-size: 1.2em;
+        }
+
+        .score, .status {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 10px 20px;
+            border-radius: 10px;
+            border: 2px solid #00d9ff;
+        }
+
+        #game-board {
+            display: grid;
+            grid-template-columns: repeat(20, 25px);
+            grid-template-rows: repeat(20, 25px);
+            gap: 0;
+            background: #0f0f1e;
+            padding: 10px;
+            border: 3px solid #00d9ff;
+            border-radius: 10px;
+            box-shadow: 0 0 30px rgba(0, 217, 255, 0.5);
+            position: relative;
+        }
+
+        .cell {
+            width: 25px;
+            height: 25px;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .wall {
+            background: #2a2a5e;
+            border: 1px solid #4a4a8e;
+        }
+
+        .empty {
+            background: transparent;
+        }
+
+        .dot::after {
+            content: '';
+            width: 4px;
+            height: 4px;
+            background: #ffeb3b;
+            border-radius: 50%;
+            display: block;
+        }
+
+        .power-pellet::after {
+            content: '';
+            width: 10px;
+            height: 10px;
+            background: #ffeb3b;
+            border-radius: 50%;
+            display: block;
+            animation: pulse 0.5s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.3); opacity: 0.7; }
+        }
+
+        .player-ghost {
+            position: absolute;
+            width: 22px;
+            height: 22px;
+            background: #ff00ff;
+            border-radius: 50% 50% 0 0;
+            z-index: 10;
+            transition: all 0.1s;
+            box-shadow: 0 0 10px #ff00ff;
+        }
+
+        .player-ghost::before {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 40%;
+            background: linear-gradient(90deg, 
+                transparent 0%, transparent 20%,
+                #ff00ff 20%, #ff00ff 40%,
+                transparent 40%, transparent 60%,
+                #ff00ff 60%, #ff00ff 80%,
+                transparent 80%, transparent 100%
+            );
+        }
+
+        .pacman {
+            position: absolute;
+            width: 22px;
+            height: 22px;
+            background: #ffff00;
+            border-radius: 50%;
+            z-index: 9;
+            transition: all 0.1s;
+            box-shadow: 0 0 10px #ffff00;
+        }
+
+        .pacman::before {
+            content: '';
+            position: absolute;
+            width: 0;
+            height: 0;
+            border-top: 11px solid #0f0f1e;
+            border-right: 8px solid transparent;
+            top: 0;
+            left: 7px;
+        }
+
+        .npc-ghost {
+            position: absolute;
+            width: 22px;
+            height: 22px;
+            border-radius: 50% 50% 0 0;
+            z-index: 8;
+            transition: all 0.1s;
+        }
+
+        .npc-ghost::before {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 40%;
+        }
+
+        .ghost-red {
+            background: #ff0000;
+            box-shadow: 0 0 10px #ff0000;
+        }
+
+        .ghost-red::before {
+            background: linear-gradient(90deg, 
+                transparent 0%, transparent 20%,
+                #ff0000 20%, #ff0000 40%,
+                transparent 40%, transparent 60%,
+                #ff0000 60%, #ff0000 80%,
+                transparent 80%, transparent 100%
+            );
+        }
+
+        .ghost-cyan {
+            background: #00ffff;
+            box-shadow: 0 0 10px #00ffff;
+        }
+
+        .ghost-cyan::before {
+            background: linear-gradient(90deg, 
+                transparent 0%, transparent 20%,
+                #00ffff 20%, #00ffff 40%,
+                transparent 40%, transparent 60%,
+                #00ffff 60%, #00ffff 80%,
+                transparent 80%, transparent 100%
+            );
+        }
+
+        .ghost-orange {
+            background: #ffa500;
+            box-shadow: 0 0 10px #ffa500;
+        }
+
+        .ghost-orange::before {
+            background: linear-gradient(90deg, 
+                transparent 0%, transparent 20%,
+                #ffa500 20%, #ffa500 40%,
+                transparent 40%, transparent 60%,
+                #ffa500 60%, #ffa500 80%,
+                transparent 80%, transparent 100%
+            );
+        }
+
+        .vulnerable {
+            background: #0000ff !important;
+            box-shadow: 0 0 10px #0000ff !important;
+            animation: blink 0.3s infinite;
+        }
+
+        .vulnerable::before {
+            background: linear-gradient(90deg, 
+                transparent 0%, transparent 20%,
+                #0000ff 20%, #0000ff 40%,
+                transparent 40%, transparent 60%,
+                #0000ff 60%, #0000ff 80%,
+                transparent 80%, transparent 100%
+            ) !important;
+        }
+
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .instructions {
+            margin-top: 20px;
+            text-align: center;
+            max-width: 600px;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 15px;
+            border-radius: 10px;
+            border: 2px solid #00d9ff;
+        }
+
+        .instructions h3 {
+            margin-bottom: 10px;
+            color: #00d9ff;
+        }
+
+        .game-over {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.95);
+            padding: 40px;
+            border-radius: 20px;
+            border: 3px solid #00d9ff;
+            text-align: center;
+            display: none;
+            z-index: 1000;
+        }
+
+        .game-over h2 {
+            font-size: 2.5em;
+            margin-bottom: 20px;
+            color: #00d9ff;
+        }
+
+        .game-over button {
+            padding: 15px 30px;
+            font-size: 1.2em;
+            background: #00d9ff;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            color: #1a1a2e;
+            font-weight: bold;
+            margin-top: 20px;
+        }
+
+        .game-over button:hover {
+            background: #00b8d9;
+            transform: scale(1.05);
+        }
+    </style>
+</head>
+<body>
+    <!-- 
+    INSTRUCCIONES DEL JUEGO:
+    - Usa las teclas de FLECHA (↑ ↓ ← →) para mover tu fantasma (MAGENTA)
+    - OBJETIVO PRINCIPAL: Atrapa a Pac-Man antes de que coma todos los puntos
+    - CUIDADO: Cuando Pac-Man come una pastilla de poder (grande), ¡HUYE! 
+      Todos los fantasmas se vuelven azules y vulnerables por 10 segundos
+    - Si Pac-Man te come mientras estás vulnerable, ¡pierdes!
+    - ¡Captura a Pac-Man para ganar!
+    -->
+
+    <h1>👻 Pac-Man Inverso</h1>
+    
+    <div class="info-panel">
+        <div class="score">Puntos de Pac-Man: <span id="score">0</span></div>
+        <div class="status">Estado: <span id="status">Normal</span></div>
+    </div>
+
+    <div id="game-board"></div>
+
+    <div class="instructions">
+        <h3>📖 Cómo Jugar</h3>
+        <p>
+            <strong>Eres el Fantasma Magenta</strong> - Usa las flechas del teclado para moverte<br>
+            🎯 <strong>Objetivo:</strong> Atrapa a Pac-Man antes de que coma todos los puntos<br>
+            ⚠️ <strong>Cuidado:</strong> Cuando Pac-Man come una pastilla grande, ¡huye! Te volverás azul y vulnerable<br>
+            🏆 <strong>Victoria:</strong> Captura a Pac-Man en modo normal<br>
+            💀 <strong>Derrota:</strong> Pac-Man te come en modo vulnerable o come todos los puntos
+        </p>
+    </div>
+
+    <div class="game-over" id="game-over">
+        <h2 id="game-message"></h2>
+        <p id="game-submessage"></p>
+        <button onclick="location.reload()">Jugar de Nuevo</button>
+    </div>
+
+    <script>
+        // Configuración del juego
+        const GRID_SIZE = 20;
+        const CELL_SIZE = 25;
+        const POWER_DURATION = 10000; // 10 segundos
+        const NPC_MOVE_INTERVAL = 300;
+        const PACMAN_MOVE_INTERVAL = 250;
+
+        // Mapa del laberinto (1=muro, 0=vacío con punto, 2=pastilla de poder)
+        const mazeMap = [
+            [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+            [1,0,0,0,0,1,0,0,0,0,0,0,0,0,1,0,0,0,2,1],
+            [1,0,1,1,0,1,0,1,1,1,1,1,1,0,1,0,1,1,0,1],
+            [1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,1],
+            [1,0,1,0,1,1,1,1,0,1,1,0,1,1,1,1,0,1,0,1],
+            [1,0,0,0,0,0,0,0,0,1,1,0,0,0,0,0,0,0,0,1],
+            [1,0,1,1,1,1,1,1,0,0,0,0,1,1,1,1,1,1,0,1],
+            [1,0,0,0,0,0,0,0,0,1,1,0,0,0,0,0,0,0,0,1],
+            [1,1,1,1,1,1,1,1,0,1,1,0,1,1,1,1,1,1,1,1],
+            [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+            [1,0,1,1,1,1,1,1,0,1,1,0,1,1,1,1,1,1,0,1],
+            [1,0,0,0,0,0,0,0,0,1,1,0,0,0,0,0,0,0,0,1],
+            [1,0,1,1,1,1,1,1,0,0,0,0,1,1,1,1,1,1,0,1],
+            [1,0,0,0,0,0,0,0,0,1,1,0,0,0,0,0,0,0,0,1],
+            [1,0,1,0,1,1,1,1,0,1,1,0,1,1,1,1,0,1,0,1],
+            [1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,1],
+            [1,0,1,1,0,1,0,1,1,1,1,1,1,0,1,0,1,1,0,1],
+            [1,2,0,0,0,1,0,0,0,0,0,0,0,0,1,0,0,0,0,1],
+            [1,0,1,1,1,1,1,1,0,1,1,0,1,1,1,1,1,1,0,1],
+            [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
+        ];
+
+        // Estado del juego
+        let gameState = {
+            board: null,
+            playerGhost: { x: 1, y: 1, element: null },
+            pacman: { x: 18, y: 18, element: null, direction: { x: 0, y: -1 } },
+            npcGhosts: [
+                { x: 1, y: 18, element: null, direction: { x: 1, y: 0 }, color: 'red' },
+                { x: 18, y: 1, element: null, direction: { x: -1, y: 0 }, color: 'cyan' },
+                { x: 10, y: 10, element: null, direction: { x: 0, y: 1 }, color: 'orange' }
+            ],
+            score: 0,
+            totalDots: 0,
+            isPowerMode: false,
+            powerTimeout: null,
+            gameOver: false,
+            cells: []
+        };
+
+        // Inicializar el juego
+        function init() {
+            const board = document.getElementById('game-board');
+            gameState.board = board;
+            gameState.cells = [];
+
+            // Crear el laberinto
+            for (let y = 0; y < GRID_SIZE; y++) {
+                for (let x = 0; x < GRID_SIZE; x++) {
+                    const cell = document.createElement('div');
+                    cell.className = 'cell';
+                    
+                    const cellType = mazeMap[y][x];
+                    if (cellType === 1) {
+                        cell.classList.add('wall');
+                    } else if (cellType === 2) {
+                        cell.classList.add('power-pellet', 'empty');
+                    } else {
+                        cell.classList.add('dot', 'empty');
+                        gameState.totalDots++;
+                    }
+                    
+                    cell.dataset.x = x;
+                    cell.dataset.y = y;
+                    board.appendChild(cell);
+                    if (!gameState.cells[y]) gameState.cells[y] = [];
+                    gameState.cells[y][x] = cell;
+                }
+            }
+
+            // Crear el fantasma jugador
+            createPlayerGhost();
+            
+            // Crear Pac-Man
+            createPacman();
+            
+            // Crear fantasmas NPC
+            createNPCGhosts();
+
+            // Iniciar el game loop
+            startGameLoop();
+            
+            // Controles del jugador
+            document.addEventListener('keydown', handlePlayerInput);
+        }
+
+        function createPlayerGhost() {
+            const ghost = document.createElement('div');
+            ghost.className = 'player-ghost';
+            ghost.id = 'player-ghost';
+            gameState.board.appendChild(ghost);
+            gameState.playerGhost.element = ghost;
+            updatePosition(gameState.playerGhost);
+        }
+
+        function createPacman() {
+            const pacman = document.createElement('div');
+            pacman.className = 'pacman';
+            pacman.id = 'pacman';
+            gameState.board.appendChild(pacman);
+            gameState.pacman.element = pacman;
+            updatePosition(gameState.pacman);
+        }
+
+        function createNPCGhosts() {
+            gameState.npcGhosts.forEach((ghost, index) => {
+                const el = document.createElement('div');
+                el.className = `npc-ghost ghost-${ghost.color}`;
+                el.id = `npc-ghost-${index}`;
+                gameState.board.appendChild(el);
+                ghost.element = el;
+                updatePosition(ghost);
+            });
+        }
+
+        function updatePosition(entity) {
+            const offsetX = (CELL_SIZE - 22) / 2;
+            const offsetY = (CELL_SIZE - 22) / 2;
+            entity.element.style.left = `${entity.x * CELL_SIZE + offsetX}px`;
+            entity.element.style.top = `${entity.y * CELL_SIZE + offsetY}px`;
+        }
+
+        function handlePlayerInput(e) {
+            if (gameState.gameOver) return;
+            
+            let newX = gameState.playerGhost.x;
+            let newY = gameState.playerGhost.y;
+
+            switch(e.key) {
+                case 'ArrowUp':
+                    newY--;
+                    break;
+                case 'ArrowDown':
+                    newY++;
+                    break;
+                case 'ArrowLeft':
+                    newX--;
+                    break;
+                case 'ArrowRight':
+                    newX++;
+                    break;
+                default:
+                    return;
+            }
+
+            if (canMove(newX, newY)) {
+                gameState.playerGhost.x = newX;
+                gameState.playerGhost.y = newY;
+                updatePosition(gameState.playerGhost);
+                checkCollisions();
+            }
+        }
+
+        function canMove(x, y) {
+            if (x < 0 || x >= GRID_SIZE || y < 0 || y >= GRID_SIZE) return false;
+            return mazeMap[y][x] !== 1;
+        }
+
+        function movePacman() {
+            if (gameState.gameOver) return;
+
+            let moved = false;
+            let attempts = 0;
+
+            // Intentar moverse en la dirección actual
+            let newX = gameState.pacman.x + gameState.pacman.direction.x;
+            let newY = gameState.pacman.y + gameState.pacman.direction.y;
+
+            if (canMove(newX, newY)) {
+                gameState.pacman.x = newX;
+                gameState.pacman.y = newY;
+                moved = true;
+            } else {
+                // Elegir una nueva dirección aleatoria
+                const directions = [
+                    { x: 0, y: -1 }, // arriba
+                    { x: 0, y: 1 },  // abajo
+                    { x: -1, y: 0 }, // izquierda
+                    { x: 1, y: 0 }   // derecha
+                ];
+
+                while (!moved && attempts < 10) {
+                    const dir = directions[Math.floor(Math.random() * directions.length)];
+                    newX = gameState.pacman.x + dir.x;
+                    newY = gameState.pacman.y + dir.y;
+
+                    if (canMove(newX, newY)) {
+                        gameState.pacman.direction = dir;
+                        gameState.pacman.x = newX;
+                        gameState.pacman.y = newY;
+                        moved = true;
+                    }
+                    attempts++;
+                }
+            }
+
+            if (moved) {
+                updatePosition(gameState.pacman);
+                eatDot();
+                checkCollisions();
+            }
+        }
+
+        function moveNPCGhosts() {
+            if (gameState.gameOver) return;
+
+            gameState.npcGhosts.forEach(ghost => {
+                let newX = ghost.x + ghost.direction.x;
+                let newY = ghost.y + ghost.direction.y;
+
+                if (!canMove(newX, newY)) {
+                    // Cambiar dirección aleatoriamente
+                    const directions = [
+                        { x: 0, y: -1 },
+                        { x: 0, y: 1 },
+                        { x: -1, y: 0 },
+                        { x: 1, y: 0 }
+                    ];
+                    ghost.direction = directions[Math.floor(Math.random() * directions.length)];
+                    newX = ghost.x + ghost.direction.x;
+                    newY = ghost.y + ghost.direction.y;
+                }
+
+                if (canMove(newX, newY)) {
+                    ghost.x = newX;
+                    ghost.y = newY;
+                    updatePosition(ghost);
+                }
+            });
+        }
+
+        function eatDot() {
+            const cell = gameState.cells[gameState.pacman.y][gameState.pacman.x];
+            
+            if (cell.classList.contains('dot')) {
+                cell.classList.remove('dot');
+                gameState.score++;
+                gameState.totalDots--;
+                document.getElementById('score').textContent = gameState.score;
+
+                if (gameState.totalDots === 0) {
+                    endGame('¡Pac-Man ganó!', 'Comió todos los puntos. ¡Inténtalo de nuevo!');
+                }
+            } else if (cell.classList.contains('power-pellet')) {
+                cell.classList.remove('power-pellet');
+                activatePowerMode();
+            }
+        }
+
+        function activatePowerMode() {
+            gameState.isPowerMode = true;
+            document.getElementById('status').textContent = '¡MODO VULNERABLE!';
+            document.getElementById('status').style.color = '#ff0000';
+
+            // Hacer vulnerables a todos los fantasmas
+            gameState.playerGhost.element.classList.add('vulnerable');
+            gameState.npcGhosts.forEach(ghost => {
+                ghost.element.classList.add('vulnerable');
+            });
+
+            if (gameState.powerTimeout) {
+                clearTimeout(gameState.powerTimeout);
+            }
+
+            gameState.powerTimeout = setTimeout(() => {
+                deactivatePowerMode();
+            }, POWER_DURATION);
+        }
+
+        function deactivatePowerMode() {
+            gameState.isPowerMode = false;
+            document.getElementById('status').textContent = 'Normal';
+            document.getElementById('status').style.color = '#fff';
+
+            gameState.playerGhost.element.classList.remove('vulnerable');
+            gameState.npcGhosts.forEach(ghost => {
+                ghost.element.classList.remove('vulnerable');
+            });
+        }
+
+        function checkCollisions() {
+            // Colisión entre jugador y Pac-Man
+            if (gameState.playerGhost.x === gameState.pacman.x && 
+                gameState.playerGhost.y === gameState.pacman.y) {
+                if (gameState.isPowerMode) {
+                    endGame('💀 ¡Pac-Man te comió!', 'Fuiste capturado en modo vulnerable');
+                } else {
+                    endGame('🎉 ¡Victoria!', '¡Has capturado a Pac-Man!');
+                }
+            }
+        }
+
+        function endGame(message, submessage) {
+            gameState.gameOver = true;
+            document.getElementById('game-message').textContent = message;
+            document.getElementById('game-submessage').textContent = submessage;
+            document.getElementById('game-over').style.display = 'block';
+        }
+
+        function startGameLoop() {
+            // Movimiento de Pac-Man
+            setInterval(movePacman, PACMAN_MOVE_INTERVAL);
+            
+            // Movimiento de fantasmas NPC
+            setInterval(moveNPCGhosts, NPC_MOVE_INTERVAL);
+        }
+
+        // Iniciar el juego cuando se carga la página
+        window.onload = init;
+    </script>
+</body>
+</html>
