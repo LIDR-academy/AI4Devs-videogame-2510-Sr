@@ -1,0 +1,2733 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>El Político Corrupto</title>
+    <style>
+        /* =============================================
+           El Político Corrupto - Estilos
+           ============================================= */
+
+        /* Reset y configuración base */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html, body {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+        }
+
+        body {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            font-family: 'Arial', sans-serif;
+        }
+
+        /* Contenedor principal del juego - pantalla completa */
+        #gameContainer {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+
+        #gameCanvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(180deg, #87CEEB 0%, #E0F6FF 100%);
+        }
+
+        /* Interfaz de usuario */
+        #ui {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            right: 20px;
+            display: flex;
+            justify-content: space-between;
+            color: #fff;
+            font-size: 24px;
+            font-weight: bold;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
+            z-index: 10;
+        }
+
+        /* Pantallas de inicio y game over */
+        #startScreen,
+        #gameOverScreen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background: rgba(0, 0, 0, 0.85);
+            color: white;
+            text-align: center;
+            z-index: 100;
+        }
+
+        #gameOverScreen {
+            display: none;
+        }
+
+        /* Títulos */
+        h1 {
+            font-size: 48px;
+            margin-bottom: 20px;
+            color: #FFD700;
+            text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.5);
+        }
+
+        h2 {
+            font-size: 36px;
+            margin-bottom: 15px;
+            color: #FFD700;
+        }
+
+        /* Instrucciones */
+        .instructions {
+            font-size: 18px;
+            margin: 20px;
+            line-height: 1.8;
+            max-width: 500px;
+        }
+
+        .instructions span {
+            color: #FFD700;
+            font-weight: bold;
+        }
+
+        /* Botones */
+        button {
+            padding: 18px 50px;
+            font-size: 24px;
+            background: linear-gradient(145deg, #FFD700, #FFA500);
+            border: none;
+            border-radius: 30px;
+            cursor: pointer;
+            color: #333;
+            font-weight: bold;
+            margin-top: 25px;
+            transition: transform 0.2s, box-shadow 0.2s;
+            pointer-events: auto;
+            position: relative;
+            z-index: 1000;
+            user-select: none;
+        }
+
+        button:hover {
+            transform: scale(1.08);
+            box-shadow: 0 8px 30px rgba(255, 215, 0, 0.6);
+        }
+
+        button:active {
+            transform: scale(0.95);
+        }
+
+        /* Puntuación final */
+        #finalScore {
+            font-size: 64px;
+            color: #00FF00;
+            margin: 25px 0;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+        }
+
+        /* Información de power-ups */
+        .powerup-info {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .powerup-item {
+            background: rgba(255, 255, 255, 0.15);
+            padding: 12px 18px;
+            border-radius: 10px;
+            font-size: 16px;
+        }
+
+        /* Indicador de power-up activo */
+        #activePowerup {
+            position: absolute;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.8);
+            color: #FFD700;
+            padding: 10px 25px;
+            border-radius: 20px;
+            font-size: 20px;
+            font-weight: bold;
+            display: none;
+            z-index: 10;
+        }
+
+        /* Responsive para pantallas pequeñas */
+        @media (max-width: 768px) {
+            #ui {
+                font-size: 18px;
+                top: 10px;
+                left: 10px;
+                right: 10px;
+            }
+
+            h1 {
+                font-size: 32px;
+            }
+
+            h2 {
+                font-size: 28px;
+            }
+
+            .instructions {
+                font-size: 14px;
+                margin: 15px;
+                max-width: 90%;
+            }
+
+            button {
+                padding: 12px 30px;
+                font-size: 18px;
+            }
+
+            #finalScore {
+                font-size: 48px;
+            }
+
+            .powerup-info {
+                gap: 10px;
+            }
+
+            .powerup-item {
+                padding: 8px 12px;
+                font-size: 14px;
+            }
+
+            #activePowerup {
+                font-size: 16px;
+                padding: 8px 18px;
+                bottom: 20px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            #ui {
+                font-size: 14px;
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 5px;
+            }
+
+            h1 {
+                font-size: 24px;
+            }
+
+            .instructions {
+                font-size: 12px;
+                line-height: 1.6;
+            }
+
+            .powerup-info {
+                flex-direction: column;
+                gap: 8px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Contenedor principal del juego -->
+    <div id="gameContainer">
+        <!-- Canvas donde se renderiza el juego (tamaño dinámico via JS) -->
+        <canvas id="gameCanvas"></canvas>
+
+        <!-- Interfaz de usuario (HUD) -->
+        <div id="ui">
+            <span id="score">Dinero: $0</span>
+            <span id="lives">Vidas: 3</span>
+            <span id="timer">Tiempo: 60</span>
+        </div>
+
+        <!-- Indicador de power-up activo -->
+        <div id="activePowerup"></div>
+
+        <!-- Pantalla de inicio -->
+        <div id="startScreen">
+            <h1>El Político Corrupto</h1>
+            <div class="instructions">
+                <p>Ayuda al político a recoger todos los billetes que pueda mientras evita a los periodistas, jueces y ciudadanos enfadados.</p>
+                <br>
+                <p><span>← →</span> o <span>A D</span> Mover</p>
+                <p><span>ESPACIO</span> Saltar</p>
+                <br>
+                <p><strong>Recoge:</strong></p>
+                <p>💵 Billete verde: $10</p>
+                <p>💶 Billete azul: $50</p>
+                <p>🥇 Lingote de oro: $100</p>
+                <p>💃 Stripper: $75</p>
+                <p>👯 Strippers VIP: $150</p>
+                <br>
+                <p><strong>Evita:</strong></p>
+                <p>📸 Periodistas | ⚖️ Jueces | 😠 Ciudadanos</p>
+            </div>
+            <div class="powerup-info">
+                <div class="powerup-item">💼 Maletín: x2 puntos</div>
+                <div class="powerup-item">👔 Corbata: Inmunidad</div>
+                <div class="powerup-item">🚁 Helicóptero: Volar</div>
+            </div>
+            <button id="playButton">¡JUGAR!</button>
+        </div>
+
+        <!-- Pantalla de Game Over -->
+        <div id="gameOverScreen">
+            <h2>¡GAME OVER!</h2>
+            <p>El político ha sido atrapado...</p>
+            <div id="finalScore">$0</div>
+            <button id="restartButton">JUGAR DE NUEVO</button>
+        </div>
+    </div>
+
+    <!-- Script del juego -->
+    <script>
+        /* =============================================
+           El Político Corrupto - Lógica del Juego
+           ============================================= */
+
+        // ============================================
+        // CONFIGURACIÓN DEL CANVAS Y ELEMENTOS UI
+        // ============================================
+
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // Elementos de la interfaz
+        const scoreDisplay = document.getElementById('score');
+        const livesDisplay = document.getElementById('lives');
+        const timerDisplay = document.getElementById('timer');
+        const startScreen = document.getElementById('startScreen');
+        const gameOverScreen = document.getElementById('gameOverScreen');
+        const finalScoreDisplay = document.getElementById('finalScore');
+        const activePowerupDisplay = document.getElementById('activePowerup');
+
+        // ============================================
+        // CARGA DE IMAGEN DEL JUGADOR
+        // ============================================
+
+        const playerImage = new Image();
+        playerImage.src = 'imagenes/pp-psoe-una-alianza-buena-para-rajoy-y-sa-nchez-que-no-para-nuestra-espan-a-degenerada.jpeg';
+        let playerImageLoaded = false;
+        playerImage.onload = () => {
+            playerImageLoaded = true;
+        };
+
+        // ============================================
+        // AUDIO DE FONDO
+        // ============================================
+
+        const backgroundMusic = new Audio('soysocialista.m4a');
+        backgroundMusic.loop = true;
+        backgroundMusic.volume = 0.5;
+
+        // ============================================
+        // ESTADO DEL JUEGO
+        // ============================================
+
+        let gameRunning = false;
+        let score = 0;
+        let lives = 3;
+        let timeLeft = 60;
+        let timerInterval;
+        let animationId;
+
+        // Sistema de bocadillo
+        let speechBubble = {
+            visible: false,
+            timer: 0,
+            duration: 1500, // 1.5 segundos
+            text: '¡Soy Feminista porque soy Socialista!'
+        };
+
+        // Sistema de nubes animadas
+        let clouds = [];
+        function initClouds() {
+            clouds = [];
+            for (let i = 0; i < 6; i++) {
+                clouds.push({
+                    x: Math.random() * canvas.width,
+                    y: Math.random() * canvas.height * 0.3 + 20,
+                    width: 80 + Math.random() * 120,
+                    speed: 0.3 + Math.random() * 0.5,
+                    opacity: 0.6 + Math.random() * 0.4
+                });
+            }
+        }
+
+        // Sistema de partículas
+        let particles = [];
+        function createParticles(x, y, color, count = 10) {
+            for (let i = 0; i < count; i++) {
+                particles.push({
+                    x: x,
+                    y: y,
+                    vx: (Math.random() - 0.5) * 8,
+                    vy: (Math.random() - 0.5) * 8 - 3,
+                    life: 1,
+                    decay: 0.02 + Math.random() * 0.02,
+                    color: color,
+                    size: 3 + Math.random() * 5
+                });
+            }
+        }
+
+        // Tiempo de animación para efectos
+        let animationTime = 0;
+
+        // ============================================
+        // CONFIGURACIÓN DE PANTALLA DINÁMICA
+        // ============================================
+
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+
+            // Reinicializar plataformas si el juego está corriendo
+            if (gameRunning) {
+                initPlatforms();
+            }
+        }
+
+        // Inicializar tamaño del canvas
+        resizeCanvas();
+
+        // Escuchar cambios de tamaño de ventana
+        window.addEventListener('resize', resizeCanvas);
+
+        // ============================================
+        // CONFIGURACIÓN DEL JUGADOR
+        // ============================================
+
+        const player = {
+            x: 100,
+            y: 400,
+            width: 80,
+            height: 100,
+            velocityX: 0,
+            velocityY: 0,
+            speed: 7,
+            jumpForce: -18,
+            onGround: false,
+            facingRight: true,
+            // Estados de power-ups
+            doublePoints: false,
+            invincible: false,
+            flying: false,
+            powerupTimer: 0
+        };
+
+        // ============================================
+        // CONSTANTES DE FÍSICA
+        // ============================================
+
+        const GRAVITY = 0.7;
+        const FRICTION = 0.85;
+
+        // ============================================
+        // ARRAYS DE ELEMENTOS DEL JUEGO
+        // ============================================
+
+        let platforms = [];
+        let money = [];
+        let obstacles = [];
+        let powerups = [];
+
+        // ============================================
+        // CONTROLES DEL TECLADO
+        // ============================================
+
+        const keys = {
+            left: false,
+            right: false,
+            space: false
+        };
+
+        // ============================================
+        // INICIALIZACIÓN DE PLATAFORMAS (DINÁMICAS)
+        // ============================================
+
+        function initPlatforms() {
+            const w = canvas.width;
+            const h = canvas.height;
+
+            platforms = [
+                // Suelo
+                { x: 0, y: h - 50, width: w, height: 50, color: '#228B22', isGround: true },
+                // Plataformas flotantes - distribuidas proporcionalmente
+                { x: w * 0.05, y: h * 0.75, width: w * 0.15, height: 25, color: '#8B4513', isGround: false },
+                { x: w * 0.30, y: h * 0.63, width: w * 0.12, height: 25, color: '#8B4513', isGround: false },
+                { x: w * 0.55, y: h * 0.53, width: w * 0.15, height: 25, color: '#8B4513', isGround: false },
+                { x: w * 0.78, y: h * 0.67, width: w * 0.15, height: 25, color: '#8B4513', isGround: false },
+                { x: w * 0.18, y: h * 0.47, width: w * 0.12, height: 25, color: '#8B4513', isGround: false },
+                { x: w * 0.42, y: h * 0.37, width: w * 0.15, height: 25, color: '#8B4513', isGround: false },
+                { x: w * 0.68, y: h * 0.30, width: w * 0.12, height: 25, color: '#8B4513', isGround: false },
+                { x: w * 0.05, y: h * 0.25, width: w * 0.10, height: 25, color: '#8B4513', isGround: false },
+                { x: w * 0.88, y: h * 0.47, width: w * 0.10, height: 25, color: '#8B4513', isGround: false },
+                // Plataformas adicionales para pantallas grandes
+                { x: w * 0.25, y: h * 0.20, width: w * 0.10, height: 25, color: '#8B4513', isGround: false },
+                { x: w * 0.50, y: h * 0.15, width: w * 0.12, height: 25, color: '#8B4513', isGround: false }
+            ];
+
+            // Reiniciar posición del jugador al centro-abajo
+            player.x = w * 0.1;
+            player.y = h - 150;
+        }
+
+        // ============================================
+        // GENERACIÓN DE ELEMENTOS
+        // ============================================
+
+        /**
+         * Genera billetes y strippers que caen del cielo
+         */
+        function spawnMoney() {
+            const maxMoney = Math.floor(canvas.width / 100);
+            if (money.length < maxMoney && Math.random() < 0.05) {
+                const types = [
+                    { value: 10, color: '#228B22', symbol: '💵', isStripper: false },
+                    { value: 50, color: '#1E90FF', symbol: '💶', isStripper: false },
+                    { value: 100, color: '#FFD700', symbol: '🥇', isStripper: false },
+                    { value: 75, color: '#FF69B4', symbol: '💃', isStripper: true },
+                    { value: 150, color: '#FF1493', symbol: '👯', isStripper: true }
+                ];
+                // Probabilidad: 40% verde, 25% azul, 10% oro, 15% bailarina, 10% doble bailarina
+                const rand = Math.random();
+                let typeIndex;
+                if (rand < 0.40) typeIndex = 0;
+                else if (rand < 0.65) typeIndex = 1;
+                else if (rand < 0.75) typeIndex = 2;
+                else if (rand < 0.90) typeIndex = 3;
+                else typeIndex = 4;
+
+                const type = types[typeIndex];
+
+                money.push({
+                    x: Math.random() * (canvas.width - 40),
+                    y: -40,
+                    width: 40,
+                    height: 40,
+                    velocityY: 2 + Math.random() * 3,
+                    ...type
+                });
+            }
+        }
+
+        /**
+         * Genera obstáculos que se mueven horizontalmente
+         */
+        function spawnObstacle() {
+            const maxObstacles = Math.floor(canvas.width / 200);
+            if (obstacles.length < maxObstacles && Math.random() < 0.01) {
+                const types = [
+                    { type: 'journalist', color: '#FF6B6B', symbol: '📸', damage: 1 },
+                    { type: 'judge', color: '#4A4A4A', symbol: '⚖️', damage: 3 },
+                    { type: 'citizen', color: '#FFA500', symbol: '😠', damage: 1 }
+                ];
+                const typeIndex = Math.floor(Math.random() * types.length);
+                const obstacleType = types[typeIndex];
+                const fromLeft = Math.random() < 0.5;
+
+                obstacles.push({
+                    x: fromLeft ? -50 : canvas.width,
+                    y: canvas.height - 110,
+                    width: 50,
+                    height: 60,
+                    velocityX: fromLeft ? 3 + Math.random() * 3 : -(3 + Math.random() * 3),
+                    ...obstacleType
+                });
+            }
+        }
+
+        /**
+         * Genera power-ups sobre las plataformas
+         */
+        function spawnPowerup() {
+            if (powerups.length < 1 && Math.random() < 0.004) {
+                const types = [
+                    { type: 'double', color: '#FFD700', symbol: '💼', duration: 10000 },
+                    { type: 'invincible', color: '#9400D3', symbol: '👔', duration: 8000 },
+                    { type: 'fly', color: '#00CED1', symbol: '🚁', duration: 6000 }
+                ];
+                const typeIndex = Math.floor(Math.random() * types.length);
+                const powerupType = types[typeIndex];
+
+                // Spawn sobre una plataforma aleatoria (no el suelo)
+                const floatingPlatforms = platforms.filter(p => !p.isGround);
+                if (floatingPlatforms.length > 0) {
+                    const platform = floatingPlatforms[Math.floor(Math.random() * floatingPlatforms.length)];
+
+                    powerups.push({
+                        x: platform.x + platform.width / 2 - 20,
+                        y: platform.y - 45,
+                        width: 40,
+                        height: 40,
+                        ...powerupType
+                    });
+                }
+            }
+        }
+
+        // ============================================
+        // FUNCIONES DE DIBUJADO
+        // ============================================
+
+        /**
+         * Dibuja el fondo mejorado con cielo gradiente, nubes y edificios
+         */
+        function drawBackground() {
+            const w = canvas.width;
+            const h = canvas.height;
+
+            // === CIELO CON GRADIENTE ===
+            const skyGradient = ctx.createLinearGradient(0, 0, 0, h * 0.7);
+            skyGradient.addColorStop(0, '#1e3c72');
+            skyGradient.addColorStop(0.3, '#2a5298');
+            skyGradient.addColorStop(0.6, '#7ec8e3');
+            skyGradient.addColorStop(1, '#ffd89b');
+            ctx.fillStyle = skyGradient;
+            ctx.fillRect(0, 0, w, h);
+
+            // === SOL ===
+            const sunX = w * 0.85;
+            const sunY = h * 0.15;
+            const sunGradient = ctx.createRadialGradient(sunX, sunY, 0, sunX, sunY, 60);
+            sunGradient.addColorStop(0, '#fff7e0');
+            sunGradient.addColorStop(0.3, '#ffdb4d');
+            sunGradient.addColorStop(0.7, '#ff9933');
+            sunGradient.addColorStop(1, 'rgba(255, 153, 51, 0)');
+            ctx.fillStyle = sunGradient;
+            ctx.beginPath();
+            ctx.arc(sunX, sunY, 60, 0, Math.PI * 2);
+            ctx.fill();
+
+            // === NUBES ANIMADAS ===
+            clouds.forEach(cloud => {
+                // Mover nube
+                cloud.x += cloud.speed;
+                if (cloud.x > w + cloud.width) {
+                    cloud.x = -cloud.width;
+                }
+
+                // Dibujar nube (varias elipses)
+                ctx.fillStyle = `rgba(255, 255, 255, ${cloud.opacity})`;
+                ctx.beginPath();
+                ctx.ellipse(cloud.x, cloud.y, cloud.width * 0.5, cloud.width * 0.25, 0, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.beginPath();
+                ctx.ellipse(cloud.x - cloud.width * 0.3, cloud.y + 10, cloud.width * 0.35, cloud.width * 0.2, 0, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.beginPath();
+                ctx.ellipse(cloud.x + cloud.width * 0.3, cloud.y + 5, cloud.width * 0.4, cloud.width * 0.22, 0, 0, Math.PI * 2);
+                ctx.fill();
+            });
+
+            // === EDIFICIOS CON GRADIENTES Y SOMBRAS ===
+            const buildings = [
+                { x: w * 0.02, y: h * 0.58, width: w * 0.10, height: h * 0.42, color1: '#4a5568', color2: '#2d3748' },
+                { x: w * 0.14, y: h * 0.50, width: w * 0.12, height: h * 0.50, color1: '#718096', color2: '#4a5568' },
+                { x: w * 0.28, y: h * 0.62, width: w * 0.08, height: h * 0.38, color1: '#a0aec0', color2: '#718096' },
+                { x: w * 0.38, y: h * 0.55, width: w * 0.11, height: h * 0.45, color1: '#667eea', color2: '#4c51bf' },
+                { x: w * 0.52, y: h * 0.48, width: w * 0.13, height: h * 0.52, color1: '#5a67d8', color2: '#434190' },
+                { x: w * 0.68, y: h * 0.58, width: w * 0.09, height: h * 0.42, color1: '#9f7aea', color2: '#805ad5' },
+                { x: w * 0.80, y: h * 0.52, width: w * 0.12, height: h * 0.48, color1: '#ed8936', color2: '#c05621' },
+                { x: w * 0.94, y: h * 0.60, width: w * 0.08, height: h * 0.40, color1: '#e53e3e', color2: '#c53030' }
+            ];
+
+            buildings.forEach(b => {
+                // Sombra del edificio
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
+                ctx.fillRect(b.x + 8, b.y + 8, b.width, b.height);
+
+                // Gradiente del edificio
+                const buildingGradient = ctx.createLinearGradient(b.x, 0, b.x + b.width, 0);
+                buildingGradient.addColorStop(0, b.color1);
+                buildingGradient.addColorStop(0.5, b.color2);
+                buildingGradient.addColorStop(1, b.color1);
+                ctx.fillStyle = buildingGradient;
+                ctx.fillRect(b.x, b.y, b.width, b.height);
+
+                // Borde superior del edificio
+                ctx.fillStyle = b.color1;
+                ctx.fillRect(b.x - 3, b.y - 8, b.width + 6, 10);
+
+                // Ventanas con brillo
+                const windowCols = Math.floor(b.width / 25);
+                const windowRows = Math.floor(b.height / 35);
+                const winW = b.width / (windowCols * 1.8);
+                const winH = b.height / (windowRows * 2.5);
+
+                for (let row = 0; row < windowRows; row++) {
+                    for (let col = 0; col < windowCols; col++) {
+                        const winX = b.x + (col + 0.5) * (b.width / windowCols) - winW / 2;
+                        const winY = b.y + 15 + row * (b.height / windowRows);
+
+                        // Ventana encendida o apagada
+                        const isLit = Math.sin(animationTime * 0.001 + row + col + b.x) > 0.3;
+                        if (isLit) {
+                            const winGradient = ctx.createLinearGradient(winX, winY, winX, winY + winH);
+                            winGradient.addColorStop(0, '#fef3c7');
+                            winGradient.addColorStop(1, '#fbbf24');
+                            ctx.fillStyle = winGradient;
+                        } else {
+                            ctx.fillStyle = 'rgba(30, 58, 138, 0.8)';
+                        }
+                        ctx.fillRect(winX, winY, winW, winH);
+
+                        // Marco de ventana
+                        ctx.strokeStyle = 'rgba(0, 0, 0, 0.3)';
+                        ctx.lineWidth = 1;
+                        ctx.strokeRect(winX, winY, winW, winH);
+                    }
+                }
+            });
+
+            // === MONTAÑAS EN EL HORIZONTE ===
+            ctx.fillStyle = 'rgba(100, 100, 150, 0.4)';
+            ctx.beginPath();
+            ctx.moveTo(0, h * 0.65);
+            ctx.lineTo(w * 0.15, h * 0.45);
+            ctx.lineTo(w * 0.25, h * 0.55);
+            ctx.lineTo(w * 0.4, h * 0.40);
+            ctx.lineTo(w * 0.55, h * 0.52);
+            ctx.lineTo(w * 0.7, h * 0.42);
+            ctx.lineTo(w * 0.85, h * 0.50);
+            ctx.lineTo(w, h * 0.45);
+            ctx.lineTo(w, h * 0.65);
+            ctx.closePath();
+            ctx.fill();
+        }
+
+        /**
+         * Dibuja y actualiza las partículas
+         */
+        function drawParticles() {
+            for (let i = particles.length - 1; i >= 0; i--) {
+                const p = particles[i];
+
+                // Actualizar posición
+                p.x += p.vx;
+                p.y += p.vy;
+                p.vy += 0.2; // gravedad
+                p.life -= p.decay;
+
+                // Eliminar partículas muertas ANTES de dibujar
+                if (p.life <= 0) {
+                    particles.splice(i, 1);
+                    continue;
+                }
+
+                // Dibujar partícula (solo si life > 0)
+                const radius = Math.max(0.1, p.size * p.life);
+                ctx.save();
+                ctx.globalAlpha = Math.max(0, p.life);
+                ctx.fillStyle = p.color;
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, radius, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Efecto de brillo
+                ctx.shadowColor = p.color;
+                ctx.shadowBlur = 10;
+                ctx.fill();
+                ctx.restore();
+            }
+        }
+
+        /**
+         * Dibuja al jugador (político) con forma humana, animación y la imagen en la camiseta
+         */
+        function drawPlayer() {
+            ctx.save();
+
+            const px = player.x;
+            const py = player.y;
+            const pw = player.width;
+            const ph = player.height;
+
+            // Animación de caminar
+            const isWalking = Math.abs(player.velocityX) > 0.5 && player.onGround;
+            const walkCycle = isWalking ? Math.sin(animationTime * 0.02) : 0;
+            const legSwing = walkCycle * 15; // Ángulo de piernas
+            const armSwing = walkCycle * 10; // Ángulo de brazos
+
+            // === SOMBRA ===
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
+            ctx.beginPath();
+            ctx.ellipse(px + pw * 0.5, py + ph + 5, pw * 0.4, 8, 0, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Parpadeo cuando es invencible
+            if (player.invincible && Math.floor(Date.now() / 100) % 2 === 0) {
+                ctx.globalAlpha = 0.5;
+            }
+
+            // Efecto de vuelo (propulsor mejorado)
+            if (player.flying) {
+                // Llamas del propulsor
+                const flameHeight = 20 + Math.sin(animationTime * 0.05) * 10;
+                const flameGradient = ctx.createLinearGradient(px + pw * 0.5, py + ph, px + pw * 0.5, py + ph + flameHeight + 20);
+                flameGradient.addColorStop(0, '#00CED1');
+                flameGradient.addColorStop(0.3, '#00BFFF');
+                flameGradient.addColorStop(0.6, '#FFD700');
+                flameGradient.addColorStop(1, 'rgba(255, 69, 0, 0)');
+                ctx.fillStyle = flameGradient;
+                ctx.beginPath();
+                ctx.moveTo(px + pw * 0.3, py + ph);
+                ctx.quadraticCurveTo(px + pw * 0.5, py + ph + flameHeight + 20, px + pw * 0.5, py + ph + flameHeight);
+                ctx.quadraticCurveTo(px + pw * 0.5, py + ph + flameHeight + 20, px + pw * 0.7, py + ph);
+                ctx.closePath();
+                ctx.fill();
+            }
+
+            // Voltear si mira a la izquierda
+            if (!player.facingRight) {
+                ctx.translate(px + pw, py);
+                ctx.scale(-1, 1);
+                ctx.translate(-px, -py);
+            }
+
+            // === PIERNAS CON ANIMACIÓN ===
+            const pantGradient = ctx.createLinearGradient(0, py + ph * 0.65, 0, py + ph);
+            pantGradient.addColorStop(0, '#34495e');
+            pantGradient.addColorStop(1, '#2c3e50');
+
+            // Pierna izquierda (trasera cuando camina)
+            ctx.save();
+            ctx.translate(px + pw * 0.3, py + ph * 0.65);
+            ctx.rotate(legSwing * Math.PI / 180);
+            ctx.fillStyle = pantGradient;
+            ctx.fillRect(-pw * 0.1, 0, pw * 0.2, ph * 0.32);
+            // Zapato izquierdo
+            ctx.fillStyle = '#1a1a1a';
+            ctx.beginPath();
+            ctx.roundRect(-pw * 0.12, ph * 0.28, pw * 0.26, ph * 0.08, 3);
+            ctx.fill();
+            ctx.restore();
+
+            // Pierna derecha (delantera cuando camina)
+            ctx.save();
+            ctx.translate(px + pw * 0.7, py + ph * 0.65);
+            ctx.rotate(-legSwing * Math.PI / 180);
+            ctx.fillStyle = pantGradient;
+            ctx.fillRect(-pw * 0.1, 0, pw * 0.2, ph * 0.32);
+            // Zapato derecho
+            ctx.fillStyle = '#1a1a1a';
+            ctx.beginPath();
+            ctx.roundRect(-pw * 0.12, ph * 0.28, pw * 0.26, ph * 0.08, 3);
+            ctx.fill();
+            ctx.restore();
+
+            // === CUERPO/TORSO (CAMISETA) CON GRADIENTE ===
+            const shirtGradient = ctx.createLinearGradient(px, py + ph * 0.28, px + pw, py + ph * 0.28);
+            shirtGradient.addColorStop(0, '#f0f0f0');
+            shirtGradient.addColorStop(0.5, '#ffffff');
+            shirtGradient.addColorStop(1, '#e8e8e8');
+            ctx.fillStyle = shirtGradient;
+            ctx.beginPath();
+            ctx.roundRect(px + pw * 0.15, py + ph * 0.26, pw * 0.7, ph * 0.42, 5);
+            ctx.fill();
+
+            // Imagen en la camiseta
+            if (playerImageLoaded) {
+                const shirtX = px + pw * 0.2;
+                const shirtY = py + ph * 0.30;
+                const shirtW = pw * 0.6;
+                const shirtH = ph * 0.34;
+                ctx.drawImage(playerImage, shirtX, shirtY, shirtW, shirtH);
+            }
+
+            // Borde de la camiseta
+            ctx.strokeStyle = '#cccccc';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.roundRect(px + pw * 0.15, py + ph * 0.26, pw * 0.7, ph * 0.42, 5);
+            ctx.stroke();
+
+            // === BRAZOS CON ANIMACIÓN ===
+            const skinColor = '#FDBF6F';
+            const skinGradient = ctx.createLinearGradient(0, py + ph * 0.28, 0, py + ph * 0.65);
+            skinGradient.addColorStop(0, '#FDBF6F');
+            skinGradient.addColorStop(1, '#E8A855');
+
+            // Brazo izquierdo
+            ctx.save();
+            ctx.translate(px + pw * 0.1, py + ph * 0.30);
+            ctx.rotate(-armSwing * Math.PI / 180);
+            ctx.fillStyle = skinGradient;
+            ctx.beginPath();
+            ctx.roundRect(-pw * 0.06, 0, pw * 0.14, ph * 0.32, 5);
+            ctx.fill();
+            // Mano izquierda
+            ctx.beginPath();
+            ctx.arc(pw * 0.01, ph * 0.34, pw * 0.08, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.restore();
+
+            // Brazo derecho
+            ctx.save();
+            ctx.translate(px + pw * 0.9, py + ph * 0.30);
+            ctx.rotate(armSwing * Math.PI / 180);
+            ctx.fillStyle = skinGradient;
+            ctx.beginPath();
+            ctx.roundRect(-pw * 0.08, 0, pw * 0.14, ph * 0.32, 5);
+            ctx.fill();
+            // Mano derecha
+            ctx.beginPath();
+            ctx.arc(-pw * 0.01, ph * 0.34, pw * 0.08, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.restore();
+
+            // === CUELLO ===
+            ctx.fillStyle = skinColor;
+            ctx.fillRect(px + pw * 0.38, py + ph * 0.18, pw * 0.24, ph * 0.12);
+
+            // === CABEZA CON SOMBRA ===
+            // Sombra de la cabeza
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
+            ctx.beginPath();
+            ctx.arc(px + pw * 0.52, py + ph * 0.14, pw * 0.28, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Cabeza
+            const headGradient = ctx.createRadialGradient(
+                px + pw * 0.45, py + ph * 0.08, 0,
+                px + pw * 0.5, py + ph * 0.12, pw * 0.3
+            );
+            headGradient.addColorStop(0, '#FFD699');
+            headGradient.addColorStop(0.7, '#FDBF6F');
+            headGradient.addColorStop(1, '#E8A855');
+            ctx.fillStyle = headGradient;
+            ctx.beginPath();
+            ctx.arc(px + pw * 0.5, py + ph * 0.12, pw * 0.28, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Pelo con más detalle
+            const hairGradient = ctx.createLinearGradient(px + pw * 0.25, py, px + pw * 0.75, py + ph * 0.15);
+            hairGradient.addColorStop(0, '#5a4030');
+            hairGradient.addColorStop(0.5, '#4a3728');
+            hairGradient.addColorStop(1, '#3a2718');
+            ctx.fillStyle = hairGradient;
+            ctx.beginPath();
+            ctx.arc(px + pw * 0.5, py + ph * 0.08, pw * 0.26, Math.PI, Math.PI * 2);
+            ctx.fill();
+            // Mechón
+            ctx.beginPath();
+            ctx.moveTo(px + pw * 0.35, py + ph * 0.02);
+            ctx.quadraticCurveTo(px + pw * 0.4, py - ph * 0.02, px + pw * 0.5, py + ph * 0.01);
+            ctx.quadraticCurveTo(px + pw * 0.55, py - ph * 0.01, px + pw * 0.6, py + ph * 0.02);
+            ctx.fill();
+
+            // Orejas
+            ctx.fillStyle = skinColor;
+            ctx.beginPath();
+            ctx.ellipse(px + pw * 0.22, py + ph * 0.12, pw * 0.05, ph * 0.04, 0, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.ellipse(px + pw * 0.78, py + ph * 0.12, pw * 0.05, ph * 0.04, 0, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Ojos con más detalle
+            ctx.fillStyle = '#FFFFFF';
+            ctx.beginPath();
+            ctx.ellipse(px + pw * 0.38, py + ph * 0.11, pw * 0.08, ph * 0.035, 0, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.ellipse(px + pw * 0.62, py + ph * 0.11, pw * 0.08, ph * 0.035, 0, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Iris
+            ctx.fillStyle = '#4A90A4';
+            ctx.beginPath();
+            ctx.arc(px + pw * 0.40, py + ph * 0.11, pw * 0.04, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.arc(px + pw * 0.64, py + ph * 0.11, pw * 0.04, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Pupilas
+            ctx.fillStyle = '#1a1a1a';
+            ctx.beginPath();
+            ctx.arc(px + pw * 0.40, py + ph * 0.11, pw * 0.02, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.arc(px + pw * 0.64, py + ph * 0.11, pw * 0.02, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Brillo en los ojos
+            ctx.fillStyle = '#FFFFFF';
+            ctx.beginPath();
+            ctx.arc(px + pw * 0.39, py + ph * 0.105, pw * 0.01, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.arc(px + pw * 0.63, py + ph * 0.105, pw * 0.01, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Sonrisa maliciosa
+            ctx.strokeStyle = '#8B4513';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.arc(px + pw * 0.5, py + ph * 0.135, pw * 0.10, 0.15 * Math.PI, 0.85 * Math.PI);
+            ctx.stroke();
+
+            // Dientes (sonrisa)
+            ctx.fillStyle = '#FFFFFF';
+            ctx.beginPath();
+            ctx.arc(px + pw * 0.5, py + ph * 0.145, pw * 0.06, 0.2 * Math.PI, 0.8 * Math.PI);
+            ctx.fill();
+
+            // Cejas expresivas
+            ctx.strokeStyle = '#4a3728';
+            ctx.lineWidth = 3;
+            ctx.lineCap = 'round';
+            ctx.beginPath();
+            ctx.moveTo(px + pw * 0.28, py + ph * 0.075);
+            ctx.quadraticCurveTo(px + pw * 0.36, py + ph * 0.055, px + pw * 0.46, py + ph * 0.065);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(px + pw * 0.54, py + ph * 0.065);
+            ctx.quadraticCurveTo(px + pw * 0.64, py + ph * 0.055, px + pw * 0.72, py + ph * 0.075);
+            ctx.stroke();
+
+            // Nariz
+            ctx.strokeStyle = '#D4A76A';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(px + pw * 0.5, py + ph * 0.10);
+            ctx.lineTo(px + pw * 0.48, py + ph * 0.13);
+            ctx.lineTo(px + pw * 0.52, py + ph * 0.13);
+            ctx.stroke();
+
+            ctx.restore();
+        }
+
+        /**
+         * Dibuja un rectángulo redondeado (compatible con todos los navegadores)
+         */
+        function drawRoundedRect(x, y, width, height, radius) {
+            ctx.beginPath();
+            ctx.moveTo(x + radius, y);
+            ctx.lineTo(x + width - radius, y);
+            ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
+            ctx.lineTo(x + width, y + height - radius);
+            ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+            ctx.lineTo(x + radius, y + height);
+            ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
+            ctx.lineTo(x, y + radius);
+            ctx.quadraticCurveTo(x, y, x + radius, y);
+            ctx.closePath();
+        }
+
+        /**
+         * Dibuja el bocadillo de diálogo
+         */
+        function drawSpeechBubble() {
+            if (!speechBubble.visible) return;
+
+            ctx.save();
+
+            const px = player.x;
+            const py = player.y;
+            const pw = player.width;
+
+            // Posición del bocadillo (encima del jugador)
+            const bubbleX = px + pw / 2;
+            const bubbleY = py - 20;
+            const bubbleWidth = 220;
+            const bubbleHeight = 45;
+
+            // Fondo del bocadillo
+            ctx.fillStyle = '#FFFFFF';
+            ctx.strokeStyle = '#333333';
+            ctx.lineWidth = 2;
+
+            // Dibujar rectángulo redondeado (compatible)
+            drawRoundedRect(bubbleX - bubbleWidth / 2, bubbleY - bubbleHeight, bubbleWidth, bubbleHeight, 10);
+            ctx.fill();
+            ctx.stroke();
+
+            // Pico del bocadillo (triángulo apuntando al jugador)
+            ctx.fillStyle = '#FFFFFF';
+            ctx.beginPath();
+            ctx.moveTo(bubbleX - 10, bubbleY);
+            ctx.lineTo(bubbleX + 10, bubbleY);
+            ctx.lineTo(bubbleX, bubbleY + 12);
+            ctx.closePath();
+            ctx.fill();
+
+            // Borde del pico
+            ctx.strokeStyle = '#333333';
+            ctx.beginPath();
+            ctx.moveTo(bubbleX - 10, bubbleY);
+            ctx.lineTo(bubbleX, bubbleY + 12);
+            ctx.lineTo(bubbleX + 10, bubbleY);
+            ctx.stroke();
+
+            // Texto del bocadillo
+            ctx.fillStyle = '#E91E63'; // Rosa/magenta
+            ctx.font = 'bold 11px Arial';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(speechBubble.text, bubbleX, bubbleY - bubbleHeight / 2);
+
+            ctx.restore();
+        }
+
+        /**
+         * Activa el bocadillo
+         */
+        function showSpeechBubble() {
+            speechBubble.visible = true;
+            speechBubble.timer = speechBubble.duration;
+        }
+
+        /**
+         * Actualiza el temporizador del bocadillo
+         */
+        function updateSpeechBubble() {
+            if (speechBubble.visible) {
+                speechBubble.timer -= 16; // ~60fps
+                if (speechBubble.timer <= 0) {
+                    speechBubble.visible = false;
+                }
+            }
+        }
+
+        /**
+         * Dibuja las plataformas con gradientes y efectos
+         */
+        function drawPlatforms() {
+            platforms.forEach(platform => {
+                ctx.save();
+
+                if (platform.isGround) {
+                    // === SUELO CON GRADIENTE DE TIERRA Y HIERBA ===
+                    // Tierra
+                    const groundGradient = ctx.createLinearGradient(0, platform.y, 0, platform.y + platform.height);
+                    groundGradient.addColorStop(0, '#8B4513');
+                    groundGradient.addColorStop(0.3, '#654321');
+                    groundGradient.addColorStop(1, '#3d2914');
+                    ctx.fillStyle = groundGradient;
+                    ctx.fillRect(platform.x, platform.y, platform.width, platform.height);
+
+                    // Hierba con gradiente
+                    const grassGradient = ctx.createLinearGradient(0, platform.y, 0, platform.y + 15);
+                    grassGradient.addColorStop(0, '#7CFC00');
+                    grassGradient.addColorStop(0.5, '#32CD32');
+                    grassGradient.addColorStop(1, '#228B22');
+                    ctx.fillStyle = grassGradient;
+                    ctx.fillRect(platform.x, platform.y, platform.width, 15);
+
+                    // Briznas de hierba
+                    ctx.strokeStyle = '#228B22';
+                    ctx.lineWidth = 2;
+                    for (let i = 0; i < platform.width; i += 20) {
+                        const grassHeight = 5 + Math.sin(i + animationTime * 0.005) * 3;
+                        ctx.beginPath();
+                        ctx.moveTo(platform.x + i, platform.y);
+                        ctx.lineTo(platform.x + i - 3, platform.y - grassHeight);
+                        ctx.stroke();
+                        ctx.beginPath();
+                        ctx.moveTo(platform.x + i + 5, platform.y);
+                        ctx.lineTo(platform.x + i + 8, platform.y - grassHeight - 2);
+                        ctx.stroke();
+                    }
+                } else {
+                    // === PLATAFORMAS FLOTANTES TIPO MADERA ===
+                    // Sombra
+                    ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
+                    ctx.fillRect(platform.x + 4, platform.y + 4, platform.width, platform.height);
+
+                    // Base de madera con gradiente
+                    const woodGradient = ctx.createLinearGradient(platform.x, platform.y, platform.x, platform.y + platform.height);
+                    woodGradient.addColorStop(0, '#D2691E');
+                    woodGradient.addColorStop(0.3, '#8B4513');
+                    woodGradient.addColorStop(0.7, '#A0522D');
+                    woodGradient.addColorStop(1, '#654321');
+                    ctx.fillStyle = woodGradient;
+
+                    // Dibujar con bordes redondeados
+                    ctx.beginPath();
+                    ctx.roundRect(platform.x, platform.y, platform.width, platform.height, 5);
+                    ctx.fill();
+
+                    // Vetas de madera
+                    ctx.strokeStyle = 'rgba(101, 67, 33, 0.6)';
+                    ctx.lineWidth = 1;
+                    for (let i = 0; i < platform.width; i += 15) {
+                        ctx.beginPath();
+                        ctx.moveTo(platform.x + i, platform.y + 3);
+                        ctx.bezierCurveTo(
+                            platform.x + i + 5, platform.y + platform.height * 0.3,
+                            platform.x + i - 3, platform.y + platform.height * 0.6,
+                            platform.x + i + 2, platform.y + platform.height - 3
+                        );
+                        ctx.stroke();
+                    }
+
+                    // Borde superior brillante
+                    ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+                    ctx.lineWidth = 2;
+                    ctx.beginPath();
+                    ctx.moveTo(platform.x + 5, platform.y + 2);
+                    ctx.lineTo(platform.x + platform.width - 5, platform.y + 2);
+                    ctx.stroke();
+
+                    // Clavos decorativos
+                    ctx.fillStyle = '#4a4a4a';
+                    ctx.beginPath();
+                    ctx.arc(platform.x + 8, platform.y + platform.height / 2, 3, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.beginPath();
+                    ctx.arc(platform.x + platform.width - 8, platform.y + platform.height / 2, 3, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+
+                ctx.restore();
+            });
+        }
+
+        // ============================================
+        // FUNCIONES DE DIBUJO DE ICONOS PERSONALIZADOS
+        // ============================================
+
+        /**
+         * Dibuja un billete verde ($10)
+         */
+        function drawBilleteVerde(x, y, size, rotation = 0) {
+            ctx.save();
+            ctx.translate(x + size/2, y + size/2);
+            ctx.rotate(rotation);
+
+            const w = size * 0.9;
+            const h = size * 0.5;
+
+            // Sombra
+            ctx.fillStyle = 'rgba(0,0,0,0.3)';
+            ctx.fillRect(-w/2 + 3, -h/2 + 3, w, h);
+
+            // Billete base
+            const gradient = ctx.createLinearGradient(-w/2, 0, w/2, 0);
+            gradient.addColorStop(0, '#1B5E20');
+            gradient.addColorStop(0.5, '#4CAF50');
+            gradient.addColorStop(1, '#1B5E20');
+            ctx.fillStyle = gradient;
+            ctx.beginPath();
+            ctx.roundRect(-w/2, -h/2, w, h, 3);
+            ctx.fill();
+
+            // Borde
+            ctx.strokeStyle = '#0D3B0D';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+
+            // Marco interior
+            ctx.strokeStyle = '#81C784';
+            ctx.lineWidth = 1;
+            ctx.strokeRect(-w/2 + 4, -h/2 + 3, w - 8, h - 6);
+
+            // Símbolo $
+            ctx.fillStyle = '#E8F5E9';
+            ctx.font = `bold ${size * 0.35}px Arial`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('$', 0, 0);
+
+            // Número 10
+            ctx.font = `bold ${size * 0.15}px Arial`;
+            ctx.fillText('10', -w/3, -h/4);
+            ctx.fillText('10', w/3, h/4);
+
+            ctx.restore();
+        }
+
+        /**
+         * Dibuja un billete azul/euro ($50)
+         */
+        function drawBilleteAzul(x, y, size, rotation = 0) {
+            ctx.save();
+            ctx.translate(x + size/2, y + size/2);
+            ctx.rotate(rotation);
+
+            const w = size * 0.9;
+            const h = size * 0.5;
+
+            // Sombra
+            ctx.fillStyle = 'rgba(0,0,0,0.3)';
+            ctx.fillRect(-w/2 + 3, -h/2 + 3, w, h);
+
+            // Billete base
+            const gradient = ctx.createLinearGradient(-w/2, 0, w/2, 0);
+            gradient.addColorStop(0, '#0D47A1');
+            gradient.addColorStop(0.5, '#2196F3');
+            gradient.addColorStop(1, '#0D47A1');
+            ctx.fillStyle = gradient;
+            ctx.beginPath();
+            ctx.roundRect(-w/2, -h/2, w, h, 3);
+            ctx.fill();
+
+            // Borde
+            ctx.strokeStyle = '#0A2F6B';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+
+            // Marco interior
+            ctx.strokeStyle = '#64B5F6';
+            ctx.lineWidth = 1;
+            ctx.strokeRect(-w/2 + 4, -h/2 + 3, w - 8, h - 6);
+
+            // Símbolo €
+            ctx.fillStyle = '#E3F2FD';
+            ctx.font = `bold ${size * 0.35}px Arial`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('€', 0, 0);
+
+            // Número 50
+            ctx.font = `bold ${size * 0.15}px Arial`;
+            ctx.fillText('50', -w/3, -h/4);
+            ctx.fillText('50', w/3, h/4);
+
+            ctx.restore();
+        }
+
+        /**
+         * Dibuja un lingote de oro ($100)
+         */
+        function drawLingoteOro(x, y, size, scale = 1) {
+            ctx.save();
+            ctx.translate(x + size/2, y + size/2);
+            ctx.scale(scale, scale);
+
+            const w = size * 0.7;
+            const h = size * 0.4;
+
+            // Sombra
+            ctx.fillStyle = 'rgba(0,0,0,0.4)';
+            ctx.beginPath();
+            ctx.moveTo(-w/2 + 5, h/2 + 4);
+            ctx.lineTo(w/2 + 5, h/2 + 4);
+            ctx.lineTo(w/2 - 5, -h/2 + 8);
+            ctx.lineTo(-w/2 + 10, -h/2 + 8);
+            ctx.closePath();
+            ctx.fill();
+
+            // Cara superior (más brillante)
+            const topGradient = ctx.createLinearGradient(-w/2, -h/2, w/2, 0);
+            topGradient.addColorStop(0, '#FFD700');
+            topGradient.addColorStop(0.3, '#FFF8DC');
+            topGradient.addColorStop(0.5, '#FFD700');
+            topGradient.addColorStop(1, '#B8860B');
+            ctx.fillStyle = topGradient;
+            ctx.beginPath();
+            ctx.moveTo(-w/2, 0);
+            ctx.lineTo(-w/3, -h/2);
+            ctx.lineTo(w/3, -h/2);
+            ctx.lineTo(w/2, 0);
+            ctx.closePath();
+            ctx.fill();
+
+            // Cara frontal
+            const frontGradient = ctx.createLinearGradient(0, 0, 0, h/2);
+            frontGradient.addColorStop(0, '#DAA520');
+            frontGradient.addColorStop(1, '#8B6914');
+            ctx.fillStyle = frontGradient;
+            ctx.beginPath();
+            ctx.moveTo(-w/2, 0);
+            ctx.lineTo(w/2, 0);
+            ctx.lineTo(w/2, h/2);
+            ctx.lineTo(-w/2, h/2);
+            ctx.closePath();
+            ctx.fill();
+
+            // Cara lateral
+            const sideGradient = ctx.createLinearGradient(w/2, 0, w/2 + 10, 0);
+            sideGradient.addColorStop(0, '#B8860B');
+            sideGradient.addColorStop(1, '#8B6914');
+            ctx.fillStyle = sideGradient;
+            ctx.beginPath();
+            ctx.moveTo(w/2, 0);
+            ctx.lineTo(w/3, -h/2);
+            ctx.lineTo(w/3 + 8, -h/2 + 5);
+            ctx.lineTo(w/2 + 8, h/2 - 5);
+            ctx.lineTo(w/2, h/2);
+            ctx.closePath();
+            ctx.fill();
+
+            // Brillo
+            ctx.fillStyle = 'rgba(255,255,255,0.6)';
+            ctx.beginPath();
+            ctx.ellipse(-w/6, -h/4, w/8, h/8, -0.3, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Texto "AU"
+            ctx.fillStyle = '#8B6914';
+            ctx.font = `bold ${size * 0.18}px Arial`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('AU', 0, h/4);
+
+            ctx.restore();
+        }
+
+        /**
+         * Dibuja una stripper/bailarina sexy ($75) - MEJORADA
+         */
+        function drawStripper(x, y, size, rotation = 0) {
+            ctx.save();
+            ctx.translate(x + size/2, y + size/2);
+            ctx.rotate(rotation);
+
+            const s = size * 1.1; // Más grande
+
+            // Brillo de fondo animado
+            const glowGradient = ctx.createRadialGradient(0, 0, 0, 0, 0, s * 0.6);
+            glowGradient.addColorStop(0, 'rgba(255, 105, 180, 0.6)');
+            glowGradient.addColorStop(0.5, 'rgba(255, 20, 147, 0.3)');
+            glowGradient.addColorStop(1, 'rgba(255, 105, 180, 0)');
+            ctx.fillStyle = glowGradient;
+            ctx.beginPath();
+            ctx.arc(0, 0, s * 0.6, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Pelo largo ondulado (detrás)
+            ctx.fillStyle = '#FFD700';
+            ctx.beginPath();
+            ctx.moveTo(-s * 0.15, -s * 0.35);
+            ctx.quadraticCurveTo(-s * 0.3, -s * 0.1, -s * 0.25, s * 0.15);
+            ctx.quadraticCurveTo(-s * 0.2, s * 0.05, -s * 0.15, s * 0.1);
+            ctx.quadraticCurveTo(-s * 0.1, 0, -s * 0.05, -s * 0.2);
+            ctx.lineTo(s * 0.05, -s * 0.2);
+            ctx.quadraticCurveTo(s * 0.1, 0, s * 0.15, s * 0.1);
+            ctx.quadraticCurveTo(s * 0.2, s * 0.05, s * 0.25, s * 0.15);
+            ctx.quadraticCurveTo(s * 0.3, -s * 0.1, s * 0.15, -s * 0.35);
+            ctx.closePath();
+            ctx.fill();
+
+            // Brillo del pelo
+            ctx.fillStyle = 'rgba(255, 255, 200, 0.4)';
+            ctx.beginPath();
+            ctx.ellipse(-s * 0.08, -s * 0.3, s * 0.03, s * 0.08, -0.3, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Cabeza
+            ctx.fillStyle = '#FDBF6F';
+            ctx.beginPath();
+            ctx.arc(0, -s * 0.28, s * 0.13, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Mejillas sonrojadas
+            ctx.fillStyle = 'rgba(255, 150, 150, 0.5)';
+            ctx.beginPath();
+            ctx.arc(-s * 0.07, -s * 0.24, s * 0.03, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.arc(s * 0.07, -s * 0.24, s * 0.03, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Ojos
+            ctx.fillStyle = '#1a1a1a';
+            ctx.beginPath();
+            ctx.ellipse(-s * 0.04, -s * 0.3, s * 0.02, s * 0.025, 0, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.ellipse(s * 0.04, -s * 0.3, s * 0.02, s * 0.025, 0, 0, Math.PI * 2);
+            ctx.fill();
+            // Brillo ojos
+            ctx.fillStyle = '#fff';
+            ctx.beginPath();
+            ctx.arc(-s * 0.035, -s * 0.31, s * 0.008, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.arc(s * 0.045, -s * 0.31, s * 0.008, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Labios
+            ctx.fillStyle = '#FF1493';
+            ctx.beginPath();
+            ctx.ellipse(0, -s * 0.22, s * 0.04, s * 0.015, 0, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Bikini top
+            const bikiniGradient = ctx.createLinearGradient(-s * 0.15, -s * 0.15, s * 0.15, -s * 0.05);
+            bikiniGradient.addColorStop(0, '#FF1493');
+            bikiniGradient.addColorStop(0.5, '#FF69B4');
+            bikiniGradient.addColorStop(1, '#FF1493');
+            ctx.fillStyle = bikiniGradient;
+            // Copa izquierda
+            ctx.beginPath();
+            ctx.arc(-s * 0.07, -s * 0.1, s * 0.06, 0, Math.PI * 2);
+            ctx.fill();
+            // Copa derecha
+            ctx.beginPath();
+            ctx.arc(s * 0.07, -s * 0.1, s * 0.06, 0, Math.PI * 2);
+            ctx.fill();
+            // Tirantes
+            ctx.strokeStyle = '#FF1493';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(-s * 0.07, -s * 0.15);
+            ctx.lineTo(-s * 0.05, -s * 0.18);
+            ctx.moveTo(s * 0.07, -s * 0.15);
+            ctx.lineTo(s * 0.05, -s * 0.18);
+            ctx.stroke();
+
+            // Cuerpo/torso
+            ctx.fillStyle = '#FDBF6F';
+            ctx.beginPath();
+            ctx.moveTo(-s * 0.1, -s * 0.05);
+            ctx.quadraticCurveTo(-s * 0.12, s * 0.05, -s * 0.08, s * 0.12);
+            ctx.lineTo(s * 0.08, s * 0.12);
+            ctx.quadraticCurveTo(s * 0.12, s * 0.05, s * 0.1, -s * 0.05);
+            ctx.closePath();
+            ctx.fill();
+
+            // Minifalda
+            const skirtGradient = ctx.createLinearGradient(0, s * 0.1, 0, s * 0.25);
+            skirtGradient.addColorStop(0, '#FF1493');
+            skirtGradient.addColorStop(1, '#C71585');
+            ctx.fillStyle = skirtGradient;
+            ctx.beginPath();
+            ctx.moveTo(-s * 0.1, s * 0.1);
+            ctx.lineTo(-s * 0.18, s * 0.28);
+            ctx.quadraticCurveTo(0, s * 0.32, s * 0.18, s * 0.28);
+            ctx.lineTo(s * 0.1, s * 0.1);
+            ctx.closePath();
+            ctx.fill();
+
+            // Brillos en la falda
+            ctx.fillStyle = 'rgba(255,255,255,0.4)';
+            ctx.beginPath();
+            ctx.ellipse(-s * 0.05, s * 0.18, s * 0.02, s * 0.04, -0.2, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Piernas sexys
+            ctx.fillStyle = '#FDBF6F';
+            // Pierna izquierda
+            ctx.beginPath();
+            ctx.moveTo(-s * 0.12, s * 0.26);
+            ctx.quadraticCurveTo(-s * 0.14, s * 0.35, -s * 0.1, s * 0.45);
+            ctx.lineTo(-s * 0.04, s * 0.45);
+            ctx.quadraticCurveTo(-s * 0.06, s * 0.35, -s * 0.05, s * 0.26);
+            ctx.closePath();
+            ctx.fill();
+            // Pierna derecha
+            ctx.beginPath();
+            ctx.moveTo(s * 0.12, s * 0.26);
+            ctx.quadraticCurveTo(s * 0.14, s * 0.35, s * 0.1, s * 0.45);
+            ctx.lineTo(s * 0.04, s * 0.45);
+            ctx.quadraticCurveTo(s * 0.06, s * 0.35, s * 0.05, s * 0.26);
+            ctx.closePath();
+            ctx.fill();
+
+            // Tacones altos
+            ctx.fillStyle = '#FF1493';
+            // Tacón izquierdo
+            ctx.beginPath();
+            ctx.moveTo(-s * 0.14, s * 0.45);
+            ctx.lineTo(-s * 0.02, s * 0.45);
+            ctx.lineTo(-s * 0.02, s * 0.48);
+            ctx.lineTo(-s * 0.06, s * 0.55);
+            ctx.lineTo(-s * 0.08, s * 0.55);
+            ctx.lineTo(-s * 0.14, s * 0.48);
+            ctx.closePath();
+            ctx.fill();
+            // Tacón derecho
+            ctx.beginPath();
+            ctx.moveTo(s * 0.02, s * 0.45);
+            ctx.lineTo(s * 0.14, s * 0.45);
+            ctx.lineTo(s * 0.14, s * 0.48);
+            ctx.lineTo(s * 0.08, s * 0.55);
+            ctx.lineTo(s * 0.06, s * 0.55);
+            ctx.lineTo(s * 0.02, s * 0.48);
+            ctx.closePath();
+            ctx.fill();
+
+            // Estrellitas decorativas
+            ctx.fillStyle = '#FFD700';
+            for (let i = 0; i < 3; i++) {
+                const starX = (Math.random() - 0.5) * s * 0.8;
+                const starY = (Math.random() - 0.5) * s * 0.6;
+                ctx.beginPath();
+                ctx.arc(starX, starY, s * 0.02, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            ctx.restore();
+        }
+
+        /**
+         * Dibuja strippers VIP ($150) - MEJORADA
+         */
+        function drawStrippersVIP(x, y, size, rotation = 0) {
+            ctx.save();
+            ctx.translate(x + size/2, y + size/2);
+            ctx.rotate(rotation);
+
+            const s = size * 1.2; // Más grande
+
+            // Efecto VIP de fondo con destellos
+            const vipGlow = ctx.createRadialGradient(0, 0, 0, 0, 0, s * 0.7);
+            vipGlow.addColorStop(0, 'rgba(255, 215, 0, 0.5)');
+            vipGlow.addColorStop(0.3, 'rgba(255, 20, 147, 0.4)');
+            vipGlow.addColorStop(0.6, 'rgba(148, 0, 211, 0.3)');
+            vipGlow.addColorStop(1, 'rgba(255, 20, 147, 0)');
+            ctx.fillStyle = vipGlow;
+            ctx.beginPath();
+            ctx.arc(0, 0, s * 0.7, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Dibujar dos strippers mejoradas
+            ctx.save();
+            ctx.translate(-s * 0.22, s * 0.05);
+            ctx.scale(0.55, 0.55);
+            drawStripperVIPSingle(0, 0, s, '#FF1493', '#FFD700');
+            ctx.restore();
+
+            ctx.save();
+            ctx.translate(s * 0.22, s * 0.05);
+            ctx.scale(0.55, 0.55);
+            drawStripperVIPSingle(0, 0, s, '#9400D3', '#FF6347');
+            ctx.restore();
+
+            // Corona VIP grande y brillante
+            const crownGradient = ctx.createLinearGradient(-s * 0.2, -s * 0.5, s * 0.2, -s * 0.3);
+            crownGradient.addColorStop(0, '#FFD700');
+            crownGradient.addColorStop(0.5, '#FFF8DC');
+            crownGradient.addColorStop(1, '#FFD700');
+            ctx.fillStyle = crownGradient;
+            ctx.beginPath();
+            ctx.moveTo(-s * 0.2, -s * 0.5);
+            ctx.lineTo(-s * 0.15, -s * 0.38);
+            ctx.lineTo(-s * 0.08, -s * 0.5);
+            ctx.lineTo(0, -s * 0.38);
+            ctx.lineTo(s * 0.08, -s * 0.5);
+            ctx.lineTo(s * 0.15, -s * 0.38);
+            ctx.lineTo(s * 0.2, -s * 0.5);
+            ctx.lineTo(s * 0.2, -s * 0.32);
+            ctx.lineTo(-s * 0.2, -s * 0.32);
+            ctx.closePath();
+            ctx.fill();
+            ctx.strokeStyle = '#DAA520';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+
+            // Joyas en la corona
+            ctx.fillStyle = '#FF0000';
+            ctx.beginPath();
+            ctx.arc(0, -s * 0.42, s * 0.03, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = '#00FF00';
+            ctx.beginPath();
+            ctx.arc(-s * 0.12, -s * 0.42, s * 0.02, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.arc(s * 0.12, -s * 0.42, s * 0.02, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Texto VIP
+            ctx.fillStyle = '#FFD700';
+            ctx.font = `bold ${s * 0.12}px Arial`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.strokeStyle = '#8B0000';
+            ctx.lineWidth = 2;
+            ctx.strokeText('VIP', 0, s * 0.5);
+            ctx.fillText('VIP', 0, s * 0.5);
+
+            ctx.restore();
+        }
+
+        /**
+         * Dibuja una stripper individual para el VIP
+         */
+        function drawStripperVIPSingle(x, y, size, dressColor, hairColor) {
+            const s = size * 0.8;
+
+            // Pelo
+            ctx.fillStyle = hairColor;
+            ctx.beginPath();
+            ctx.moveTo(x - s * 0.1, y - s * 0.32);
+            ctx.quadraticCurveTo(x - s * 0.2, y - s * 0.1, x - s * 0.15, y + s * 0.1);
+            ctx.quadraticCurveTo(x - s * 0.05, y, x, y - s * 0.15);
+            ctx.quadraticCurveTo(x + s * 0.05, y, x + s * 0.15, y + s * 0.1);
+            ctx.quadraticCurveTo(x + s * 0.2, y - s * 0.1, x + s * 0.1, y - s * 0.32);
+            ctx.closePath();
+            ctx.fill();
+
+            // Cabeza
+            ctx.fillStyle = '#FDBF6F';
+            ctx.beginPath();
+            ctx.arc(x, y - s * 0.25, s * 0.1, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Ojos
+            ctx.fillStyle = '#1a1a1a';
+            ctx.beginPath();
+            ctx.arc(x - s * 0.03, y - s * 0.26, s * 0.015, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.arc(x + s * 0.03, y - s * 0.26, s * 0.015, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Labios
+            ctx.fillStyle = '#FF1493';
+            ctx.beginPath();
+            ctx.ellipse(x, y - s * 0.2, s * 0.03, s * 0.01, 0, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Bikini
+            ctx.fillStyle = dressColor;
+            ctx.beginPath();
+            ctx.arc(x - s * 0.05, y - s * 0.1, s * 0.04, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.arc(x + s * 0.05, y - s * 0.1, s * 0.04, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Cuerpo
+            ctx.fillStyle = '#FDBF6F';
+            ctx.beginPath();
+            ctx.moveTo(x - s * 0.08, y - s * 0.05);
+            ctx.quadraticCurveTo(x - s * 0.1, y + s * 0.05, x - s * 0.06, y + s * 0.12);
+            ctx.lineTo(x + s * 0.06, y + s * 0.12);
+            ctx.quadraticCurveTo(x + s * 0.1, y + s * 0.05, x + s * 0.08, y - s * 0.05);
+            ctx.closePath();
+            ctx.fill();
+
+            // Minifalda
+            ctx.fillStyle = dressColor;
+            ctx.beginPath();
+            ctx.moveTo(x - s * 0.08, y + s * 0.1);
+            ctx.lineTo(x - s * 0.12, y + s * 0.25);
+            ctx.lineTo(x + s * 0.12, y + s * 0.25);
+            ctx.lineTo(x + s * 0.08, y + s * 0.1);
+            ctx.closePath();
+            ctx.fill();
+
+            // Piernas
+            ctx.fillStyle = '#FDBF6F';
+            ctx.fillRect(x - s * 0.08, y + s * 0.23, s * 0.06, s * 0.18);
+            ctx.fillRect(x + s * 0.02, y + s * 0.23, s * 0.06, s * 0.18);
+
+            // Tacones
+            ctx.fillStyle = dressColor;
+            ctx.beginPath();
+            ctx.moveTo(x - s * 0.1, y + s * 0.41);
+            ctx.lineTo(x - s * 0.01, y + s * 0.41);
+            ctx.lineTo(x - s * 0.05, y + s * 0.48);
+            ctx.closePath();
+            ctx.fill();
+            ctx.beginPath();
+            ctx.moveTo(x + s * 0.01, y + s * 0.41);
+            ctx.lineTo(x + s * 0.1, y + s * 0.41);
+            ctx.lineTo(x + s * 0.05, y + s * 0.48);
+            ctx.closePath();
+            ctx.fill();
+        }
+
+        /**
+         * Dibuja un periodista con cámara
+         */
+        function drawPeriodista(x, y, size) {
+            ctx.save();
+            ctx.translate(x + size/2, y + size/2);
+
+            const s = size;
+
+            // Cuerpo
+            ctx.fillStyle = '#37474F';
+            drawRoundedRect(-s * 0.2, -s * 0.1, s * 0.4, s * 0.4, 5);
+            ctx.fill();
+
+            // Cabeza
+            ctx.fillStyle = '#FDBF6F';
+            ctx.beginPath();
+            ctx.arc(0, -s * 0.25, s * 0.15, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Pelo
+            ctx.fillStyle = '#5D4037';
+            ctx.beginPath();
+            ctx.arc(0, -s * 0.3, s * 0.12, Math.PI, Math.PI * 2);
+            ctx.fill();
+
+            // Gafas
+            ctx.strokeStyle = '#1a1a1a';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.arc(-s * 0.06, -s * 0.25, s * 0.05, 0, Math.PI * 2);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.arc(s * 0.06, -s * 0.25, s * 0.05, 0, Math.PI * 2);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(-s * 0.01, -s * 0.25);
+            ctx.lineTo(s * 0.01, -s * 0.25);
+            ctx.stroke();
+
+            // Cámara
+            ctx.fillStyle = '#212121';
+            drawRoundedRect(s * 0.15, -s * 0.2, s * 0.25, s * 0.18, 3);
+            ctx.fill();
+
+            // Lente
+            const lensGradient = ctx.createRadialGradient(s * 0.27, -s * 0.11, 0, s * 0.27, -s * 0.11, s * 0.08);
+            lensGradient.addColorStop(0, '#4FC3F7');
+            lensGradient.addColorStop(0.5, '#0288D1');
+            lensGradient.addColorStop(1, '#01579B');
+            ctx.fillStyle = lensGradient;
+            ctx.beginPath();
+            ctx.arc(s * 0.27, -s * 0.11, s * 0.07, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Flash
+            const flashIntensity = Math.sin(animationTime * 0.015) > 0.7 ? 1 : 0.3;
+            ctx.fillStyle = `rgba(255, 255, 0, ${flashIntensity})`;
+            ctx.beginPath();
+            ctx.arc(s * 0.32, -s * 0.25, s * 0.05, 0, Math.PI * 2);
+            ctx.fill();
+            if (flashIntensity > 0.5) {
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+                ctx.beginPath();
+                ctx.arc(s * 0.32, -s * 0.25, s * 0.08, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            // Piernas
+            ctx.fillStyle = '#455A64';
+            ctx.fillRect(-s * 0.15, s * 0.28, s * 0.1, s * 0.18);
+            ctx.fillRect(s * 0.05, s * 0.28, s * 0.1, s * 0.18);
+
+            ctx.restore();
+        }
+
+        /**
+         * Dibuja un juez con toga
+         */
+        function drawJuez(x, y, size) {
+            ctx.save();
+            ctx.translate(x + size/2, y + size/2);
+
+            const s = size;
+
+            // Toga
+            const togaGradient = ctx.createLinearGradient(-s * 0.25, 0, s * 0.25, 0);
+            togaGradient.addColorStop(0, '#1a1a1a');
+            togaGradient.addColorStop(0.5, '#333');
+            togaGradient.addColorStop(1, '#1a1a1a');
+            ctx.fillStyle = togaGradient;
+            ctx.beginPath();
+            ctx.moveTo(-s * 0.25, -s * 0.1);
+            ctx.lineTo(-s * 0.3, s * 0.4);
+            ctx.lineTo(s * 0.3, s * 0.4);
+            ctx.lineTo(s * 0.25, -s * 0.1);
+            ctx.closePath();
+            ctx.fill();
+
+            // Cuello blanco
+            ctx.fillStyle = '#FFF';
+            ctx.beginPath();
+            ctx.moveTo(-s * 0.1, -s * 0.1);
+            ctx.lineTo(0, s * 0.05);
+            ctx.lineTo(s * 0.1, -s * 0.1);
+            ctx.closePath();
+            ctx.fill();
+
+            // Cabeza
+            ctx.fillStyle = '#FDBF6F';
+            ctx.beginPath();
+            ctx.arc(0, -s * 0.25, s * 0.15, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Peluca de juez
+            ctx.fillStyle = '#E0E0E0';
+            ctx.beginPath();
+            ctx.arc(0, -s * 0.28, s * 0.18, Math.PI * 0.8, Math.PI * 2.2);
+            ctx.fill();
+            // Rizos
+            ctx.beginPath();
+            ctx.arc(-s * 0.15, -s * 0.15, s * 0.05, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.arc(s * 0.15, -s * 0.15, s * 0.05, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Cara seria
+            ctx.fillStyle = '#1a1a1a';
+            ctx.beginPath();
+            ctx.arc(-s * 0.06, -s * 0.25, s * 0.02, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.arc(s * 0.06, -s * 0.25, s * 0.02, 0, Math.PI * 2);
+            ctx.fill();
+            // Ceño fruncido
+            ctx.strokeStyle = '#8B4513';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(-s * 0.05, -s * 0.18);
+            ctx.lineTo(s * 0.05, -s * 0.18);
+            ctx.stroke();
+
+            // Mazo
+            ctx.fillStyle = '#8B4513';
+            ctx.fillRect(s * 0.2, -s * 0.3, s * 0.08, s * 0.35);
+            ctx.fillStyle = '#5D4037';
+            ctx.beginPath();
+            ctx.roundRect(s * 0.15, -s * 0.35, s * 0.18, s * 0.12, 3);
+            ctx.fill();
+
+            ctx.restore();
+        }
+
+        /**
+         * Dibuja un ciudadano enfadado
+         */
+        function drawCiudadano(x, y, size) {
+            ctx.save();
+            ctx.translate(x + size/2, y + size/2);
+
+            const s = size;
+
+            // Cuerpo
+            ctx.fillStyle = '#FF5722';
+            ctx.beginPath();
+            ctx.roundRect(-s * 0.18, -s * 0.05, s * 0.36, s * 0.35, 5);
+            ctx.fill();
+
+            // Cabeza
+            ctx.fillStyle = '#FDBF6F';
+            ctx.beginPath();
+            ctx.arc(0, -s * 0.2, s * 0.15, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Cejas enfadadas
+            ctx.strokeStyle = '#5D4037';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.moveTo(-s * 0.1, -s * 0.28);
+            ctx.lineTo(-s * 0.03, -s * 0.23);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(s * 0.1, -s * 0.28);
+            ctx.lineTo(s * 0.03, -s * 0.23);
+            ctx.stroke();
+
+            // Ojos enfadados
+            ctx.fillStyle = '#1a1a1a';
+            ctx.beginPath();
+            ctx.arc(-s * 0.05, -s * 0.2, s * 0.025, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.arc(s * 0.05, -s * 0.2, s * 0.025, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Boca gritando
+            ctx.fillStyle = '#8B0000';
+            ctx.beginPath();
+            ctx.ellipse(0, -s * 0.1, s * 0.08, s * 0.05, 0, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Cartel de protesta
+            ctx.fillStyle = '#FFEB3B';
+            ctx.fillRect(-s * 0.35, -s * 0.5, s * 0.3, s * 0.2);
+            ctx.strokeStyle = '#F57F17';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(-s * 0.35, -s * 0.5, s * 0.3, s * 0.2);
+
+            // Palo del cartel
+            ctx.fillStyle = '#8D6E63';
+            ctx.fillRect(-s * 0.22, -s * 0.32, s * 0.04, s * 0.4);
+
+            // Texto "NO!" en el cartel
+            ctx.fillStyle = '#D32F2F';
+            ctx.font = `bold ${s * 0.12}px Arial`;
+            ctx.textAlign = 'center';
+            ctx.fillText('NO!', -s * 0.2, -s * 0.38);
+
+            // Piernas
+            ctx.fillStyle = '#5D4037';
+            ctx.fillRect(-s * 0.12, s * 0.28, s * 0.08, s * 0.18);
+            ctx.fillRect(s * 0.04, s * 0.28, s * 0.08, s * 0.18);
+
+            ctx.restore();
+        }
+
+        /**
+         * Dibuja un maletín (power-up x2)
+         */
+        function drawMaletin(x, y, size) {
+            ctx.save();
+            ctx.translate(x + size/2, y + size/2);
+
+            const s = size * 0.8;
+
+            // Brillo de fondo
+            ctx.shadowColor = '#FFD700';
+            ctx.shadowBlur = 15;
+
+            // Maletín
+            const briefcaseGradient = ctx.createLinearGradient(-s/2, 0, s/2, 0);
+            briefcaseGradient.addColorStop(0, '#5D4037');
+            briefcaseGradient.addColorStop(0.5, '#8D6E63');
+            briefcaseGradient.addColorStop(1, '#5D4037');
+            ctx.fillStyle = briefcaseGradient;
+            ctx.beginPath();
+            ctx.roundRect(-s * 0.4, -s * 0.25, s * 0.8, s * 0.5, 5);
+            ctx.fill();
+
+            // Asa
+            ctx.strokeStyle = '#4E342E';
+            ctx.lineWidth = 4;
+            ctx.beginPath();
+            ctx.arc(0, -s * 0.3, s * 0.15, Math.PI, Math.PI * 2);
+            ctx.stroke();
+
+            // Cerraduras doradas
+            ctx.fillStyle = '#FFD700';
+            ctx.beginPath();
+            ctx.roundRect(-s * 0.2, -s * 0.05, s * 0.1, s * 0.08, 2);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.roundRect(s * 0.1, -s * 0.05, s * 0.1, s * 0.08, 2);
+            ctx.fill();
+
+            // Brillo
+            ctx.fillStyle = 'rgba(255,255,255,0.3)';
+            ctx.beginPath();
+            ctx.ellipse(-s * 0.2, -s * 0.15, s * 0.15, s * 0.08, -0.3, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Símbolo x2
+            ctx.shadowBlur = 0;
+            ctx.fillStyle = '#FFD700';
+            ctx.font = `bold ${s * 0.25}px Arial`;
+            ctx.textAlign = 'center';
+            ctx.fillText('x2', 0, s * 0.35);
+
+            ctx.restore();
+        }
+
+        /**
+         * Dibuja una corbata (power-up inmunidad)
+         */
+        function drawCorbata(x, y, size) {
+            ctx.save();
+            ctx.translate(x + size/2, y + size/2);
+
+            const s = size * 0.8;
+
+            // Brillo de fondo
+            ctx.shadowColor = '#9400D3';
+            ctx.shadowBlur = 15;
+
+            // Corbata
+            const tieGradient = ctx.createLinearGradient(-s * 0.15, 0, s * 0.15, 0);
+            tieGradient.addColorStop(0, '#7B1FA2');
+            tieGradient.addColorStop(0.5, '#9C27B0');
+            tieGradient.addColorStop(1, '#7B1FA2');
+            ctx.fillStyle = tieGradient;
+
+            // Nudo
+            ctx.beginPath();
+            ctx.moveTo(-s * 0.1, -s * 0.35);
+            ctx.lineTo(s * 0.1, -s * 0.35);
+            ctx.lineTo(s * 0.08, -s * 0.25);
+            ctx.lineTo(-s * 0.08, -s * 0.25);
+            ctx.closePath();
+            ctx.fill();
+
+            // Cuerpo de la corbata
+            ctx.beginPath();
+            ctx.moveTo(-s * 0.08, -s * 0.25);
+            ctx.lineTo(-s * 0.15, s * 0.3);
+            ctx.lineTo(0, s * 0.4);
+            ctx.lineTo(s * 0.15, s * 0.3);
+            ctx.lineTo(s * 0.08, -s * 0.25);
+            ctx.closePath();
+            ctx.fill();
+
+            // Patrón de rayas
+            ctx.strokeStyle = '#E1BEE7';
+            ctx.lineWidth = 2;
+            for (let i = 0; i < 4; i++) {
+                ctx.beginPath();
+                ctx.moveTo(-s * 0.1, -s * 0.15 + i * s * 0.15);
+                ctx.lineTo(s * 0.1, -s * 0.05 + i * s * 0.15);
+                ctx.stroke();
+            }
+
+            // Escudo/estrella de inmunidad
+            ctx.shadowBlur = 0;
+            ctx.fillStyle = '#FFD700';
+            ctx.beginPath();
+            const starX = 0, starY = s * 0.05;
+            for (let i = 0; i < 5; i++) {
+                const angle = (i * 4 * Math.PI / 5) - Math.PI / 2;
+                const radius = i % 2 === 0 ? s * 0.1 : s * 0.05;
+                if (i === 0) ctx.moveTo(starX + radius * Math.cos(angle), starY + radius * Math.sin(angle));
+                else ctx.lineTo(starX + radius * Math.cos(angle), starY + radius * Math.sin(angle));
+            }
+            ctx.closePath();
+            ctx.fill();
+
+            ctx.restore();
+        }
+
+        /**
+         * Dibuja un helicóptero (power-up volar)
+         */
+        function drawHelicoptero(x, y, size) {
+            ctx.save();
+            ctx.translate(x + size/2, y + size/2);
+
+            const s = size * 0.8;
+            const rotorAngle = animationTime * 0.05;
+
+            // Brillo de fondo
+            ctx.shadowColor = '#00CED1';
+            ctx.shadowBlur = 15;
+
+            // Cuerpo del helicóptero
+            const bodyGradient = ctx.createLinearGradient(0, -s * 0.2, 0, s * 0.2);
+            bodyGradient.addColorStop(0, '#4DD0E1');
+            bodyGradient.addColorStop(0.5, '#00BCD4');
+            bodyGradient.addColorStop(1, '#00838F');
+            ctx.fillStyle = bodyGradient;
+            ctx.beginPath();
+            ctx.ellipse(0, s * 0.05, s * 0.3, s * 0.15, 0, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Cabina
+            ctx.fillStyle = '#B2EBF2';
+            ctx.beginPath();
+            ctx.ellipse(-s * 0.1, s * 0.02, s * 0.12, s * 0.1, 0, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Cola
+            ctx.fillStyle = '#00838F';
+            ctx.beginPath();
+            ctx.moveTo(s * 0.25, s * 0.05);
+            ctx.lineTo(s * 0.45, -s * 0.05);
+            ctx.lineTo(s * 0.45, s * 0.1);
+            ctx.lineTo(s * 0.25, s * 0.1);
+            ctx.closePath();
+            ctx.fill();
+
+            // Rotor de cola
+            ctx.fillStyle = '#37474F';
+            ctx.save();
+            ctx.translate(s * 0.45, s * 0.02);
+            ctx.rotate(rotorAngle * 2);
+            ctx.fillRect(-s * 0.02, -s * 0.1, s * 0.04, s * 0.2);
+            ctx.restore();
+
+            // Patines
+            ctx.strokeStyle = '#37474F';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.moveTo(-s * 0.25, s * 0.18);
+            ctx.lineTo(-s * 0.25, s * 0.25);
+            ctx.lineTo(s * 0.15, s * 0.25);
+            ctx.lineTo(s * 0.15, s * 0.18);
+            ctx.stroke();
+
+            // Mástil del rotor
+            ctx.fillStyle = '#37474F';
+            ctx.fillRect(-s * 0.03, -s * 0.15, s * 0.06, s * 0.1);
+
+            // Rotor principal (animado)
+            ctx.shadowBlur = 0;
+            ctx.save();
+            ctx.translate(0, -s * 0.15);
+            ctx.rotate(rotorAngle);
+            ctx.fillStyle = '#546E7A';
+            ctx.beginPath();
+            ctx.ellipse(-s * 0.3, 0, s * 0.1, s * 0.03, 0, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.ellipse(s * 0.3, 0, s * 0.1, s * 0.03, 0, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillRect(-s * 0.35, -s * 0.02, s * 0.7, s * 0.04);
+            ctx.restore();
+
+            ctx.restore();
+        }
+
+        /**
+         * Dibuja los billetes y strippers con iconos personalizados
+         */
+        function drawMoney() {
+            money.forEach((m, index) => {
+                ctx.save();
+
+                const floatOffset = Math.sin(animationTime * 0.005 + index) * 3;
+                const drawY = m.y + floatOffset;
+                const rotation = m.isStripper ? Math.sin(animationTime * 0.003 + index) * 0.15 : 0;
+                const scale = m.isStripper ? 1 : 1 + Math.sin(animationTime * 0.006 + index) * 0.1;
+
+                // Aura de brillo
+                ctx.shadowColor = m.color;
+                ctx.shadowBlur = 15 + Math.sin(animationTime * 0.008 + index) * 5;
+
+                ctx.translate(m.x + 20, drawY + 20);
+                ctx.scale(scale, scale);
+                ctx.translate(-20, -20);
+
+                // Dibujar según el valor
+                if (m.value === 10) {
+                    drawBilleteVerde(0, 0, 40, rotation);
+                } else if (m.value === 50) {
+                    drawBilleteAzul(0, 0, 40, rotation);
+                } else if (m.value === 100) {
+                    drawLingoteOro(0, 0, 40, scale);
+                } else if (m.value === 75) {
+                    drawStripper(0, 0, 65, rotation); // Más grande
+                } else if (m.value === 150) {
+                    drawStrippersVIP(0, 0, 75, rotation); // Más grande
+                }
+
+                ctx.restore();
+            });
+        }
+
+        /**
+         * Dibuja los obstáculos con iconos personalizados
+         */
+        function drawObstacles() {
+            obstacles.forEach((obs, index) => {
+                ctx.save();
+
+                // Pequeño movimiento
+                const bounce = Math.sin(animationTime * 0.008 + index) * 2;
+
+                if (obs.type === 'journalist') {
+                    drawPeriodista(obs.x, obs.y + bounce, 60);
+                } else if (obs.type === 'judge') {
+                    drawJuez(obs.x, obs.y + bounce, 60);
+                } else if (obs.type === 'citizen') {
+                    drawCiudadano(obs.x, obs.y + bounce, 60);
+                }
+
+                ctx.restore();
+            });
+        }
+
+        /**
+         * Dibuja los power-ups con iconos personalizados
+         */
+        function drawPowerups() {
+            powerups.forEach((p, index) => {
+                ctx.save();
+
+                const floatOffset = Math.sin(animationTime * 0.006 + index) * 5;
+                const scale = 1 + Math.sin(animationTime * 0.008 + index) * 0.1;
+
+                ctx.translate(p.x + 20, p.y + floatOffset + 20);
+                ctx.scale(scale, scale);
+                ctx.translate(-20, -20);
+
+                if (p.type === 'double') {
+                    drawMaletin(0, 0, 45);
+                } else if (p.type === 'invincible') {
+                    drawCorbata(0, 0, 45);
+                } else if (p.type === 'fly') {
+                    drawHelicoptero(0, 0, 50);
+                }
+
+                ctx.restore();
+            });
+        }
+
+        // ============================================
+        // FUNCIONES DE ACTUALIZACIÓN
+        // ============================================
+
+        /**
+         * Actualiza la posición y estado del jugador
+         */
+        function updatePlayer() {
+            // Movimiento horizontal
+            if (keys.left) {
+                player.velocityX = -player.speed;
+                player.facingRight = false;
+            } else if (keys.right) {
+                player.velocityX = player.speed;
+                player.facingRight = true;
+            } else {
+                player.velocityX *= FRICTION;
+            }
+
+            // Salto
+            if (keys.space && (player.onGround || player.flying)) {
+                if (player.flying) {
+                    player.velocityY = -10;
+                } else {
+                    player.velocityY = player.jumpForce;
+                    player.onGround = false;
+                }
+            }
+
+            // Aplicar gravedad (reducida cuando vuela)
+            if (player.flying) {
+                player.velocityY += GRAVITY * 0.3;
+                if (player.velocityY > 4) player.velocityY = 4;
+            } else {
+                player.velocityY += GRAVITY;
+            }
+
+            // Actualizar posición
+            player.x += player.velocityX;
+            player.y += player.velocityY;
+
+            // Límites de pantalla
+            if (player.x < 0) player.x = 0;
+            if (player.x + player.width > canvas.width) player.x = canvas.width - player.width;
+            if (player.y < 0) player.y = 0;
+
+            // Colisión con plataformas
+            player.onGround = false;
+            platforms.forEach(platform => {
+                if (player.x < platform.x + platform.width &&
+                    player.x + player.width > platform.x &&
+                    player.y + player.height > platform.y &&
+                    player.y + player.height < platform.y + platform.height + player.velocityY + 1 &&
+                    player.velocityY >= 0) {
+                    player.y = platform.y - player.height;
+                    player.velocityY = 0;
+                    player.onGround = true;
+                }
+            });
+
+            // Caer fuera de pantalla
+            if (player.y > canvas.height) {
+                loseLife();
+            }
+        }
+
+        /**
+         * Actualiza la posición de los billetes y detecta colisiones
+         */
+        function updateMoney() {
+            for (let i = money.length - 1; i >= 0; i--) {
+                money[i].y += money[i].velocityY;
+
+                // Eliminar si sale de pantalla
+                if (money[i].y > canvas.height) {
+                    money.splice(i, 1);
+                    continue;
+                }
+
+                // Colisión con jugador
+                if (checkCollision(player, money[i])) {
+                    const points = player.doublePoints ? money[i].value * 2 : money[i].value;
+                    score += points;
+                    updateUI();
+                    showSpeechBubble(); // Mostrar bocadillo
+                    // Crear partículas de celebración
+                    const particleColor = money[i].isStripper ? '#FF69B4' : money[i].color;
+                    createParticles(money[i].x + 20, money[i].y + 20, particleColor, 15);
+                    money.splice(i, 1);
+                }
+            }
+        }
+
+        /**
+         * Actualiza la posición de los obstáculos y detecta colisiones
+         */
+        function updateObstacles() {
+            for (let i = obstacles.length - 1; i >= 0; i--) {
+                obstacles[i].x += obstacles[i].velocityX;
+
+                // Eliminar si sale de pantalla
+                if (obstacles[i].x < -60 || obstacles[i].x > canvas.width + 60) {
+                    obstacles.splice(i, 1);
+                    continue;
+                }
+
+                // Colisión con jugador
+                if (!player.invincible && checkCollision(player, obstacles[i])) {
+                    loseLife();
+                    obstacles.splice(i, 1);
+                }
+            }
+        }
+
+        /**
+         * Actualiza los power-ups y sus temporizadores
+         */
+        function updatePowerups() {
+            for (let i = powerups.length - 1; i >= 0; i--) {
+                // Colisión con jugador
+                if (checkCollision(player, powerups[i])) {
+                    activatePowerup(powerups[i]);
+                    powerups.splice(i, 1);
+                }
+            }
+
+            // Actualizar temporizador de power-up activo
+            if (player.powerupTimer > 0) {
+                player.powerupTimer -= 16; // aproximadamente 60fps
+                if (player.powerupTimer <= 0) {
+                    deactivatePowerups();
+                }
+            }
+        }
+
+        // ============================================
+        // SISTEMA DE POWER-UPS
+        // ============================================
+
+        /**
+         * Activa un power-up
+         */
+        function activatePowerup(powerup) {
+            deactivatePowerups();
+            player.powerupTimer = powerup.duration;
+
+            switch (powerup.type) {
+                case 'double':
+                    player.doublePoints = true;
+                    showPowerupMessage('💼 ¡PUNTOS DOBLES!');
+                    break;
+                case 'invincible':
+                    player.invincible = true;
+                    showPowerupMessage('👔 ¡INMUNIDAD!');
+                    break;
+                case 'fly':
+                    player.flying = true;
+                    showPowerupMessage('🚁 ¡VOLANDO!');
+                    break;
+            }
+        }
+
+        /**
+         * Desactiva todos los power-ups
+         */
+        function deactivatePowerups() {
+            player.doublePoints = false;
+            player.invincible = false;
+            player.flying = false;
+            player.powerupTimer = 0;
+            activePowerupDisplay.style.display = 'none';
+        }
+
+        /**
+         * Muestra mensaje de power-up activo
+         */
+        function showPowerupMessage(message) {
+            activePowerupDisplay.textContent = message;
+            activePowerupDisplay.style.display = 'block';
+        }
+
+        // ============================================
+        // UTILIDADES
+        // ============================================
+
+        /**
+         * Detecta colisión entre dos rectángulos
+         */
+        function checkCollision(a, b) {
+            return a.x < b.x + b.width &&
+                   a.x + a.width > b.x &&
+                   a.y < b.y + b.height &&
+                   a.y + a.height > b.y;
+        }
+
+        /**
+         * Pierde una vida y reinicia posición
+         */
+        function loseLife() {
+            lives--;
+            updateUI();
+
+            if (lives <= 0) {
+                endGame();
+            } else {
+                // Reiniciar posición del jugador
+                player.x = canvas.width * 0.1;
+                player.y = canvas.height - 150;
+                player.velocityX = 0;
+                player.velocityY = 0;
+
+                // Invencibilidad breve
+                player.invincible = true;
+                setTimeout(() => {
+                    if (gameRunning) player.invincible = false;
+                }, 2000);
+            }
+        }
+
+        /**
+         * Actualiza los elementos de la UI
+         */
+        function updateUI() {
+            scoreDisplay.textContent = `Dinero: $${score}`;
+            livesDisplay.textContent = `Vidas: ${lives}`;
+            timerDisplay.textContent = `Tiempo: ${timeLeft}`;
+        }
+
+        // ============================================
+        // BUCLE PRINCIPAL DEL JUEGO
+        // ============================================
+
+        function gameLoop() {
+            if (!gameRunning) return;
+
+            // Actualizar tiempo de animación
+            animationTime += 16;
+
+            // Limpiar canvas
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Dibujar todo
+            drawBackground();
+            drawPlatforms();
+            drawMoney();
+            drawPowerups();
+            drawObstacles();
+            drawParticles();
+            drawPlayer();
+            drawSpeechBubble();
+
+            // Actualizar todo
+            updatePlayer();
+            updateMoney();
+            updateObstacles();
+            updatePowerups();
+            updateSpeechBubble();
+
+            // Generar nuevos elementos
+            spawnMoney();
+            spawnObstacle();
+            spawnPowerup();
+
+            // Continuar bucle
+            animationId = requestAnimationFrame(gameLoop);
+        }
+
+        // ============================================
+        // CONTROL DEL JUEGO
+        // ============================================
+
+        /**
+         * Inicia el juego
+         */
+        function startGame() {
+            console.log('startGame() llamado');
+
+            // Limpiar cualquier estado anterior primero
+            if (timerInterval) {
+                clearInterval(timerInterval);
+                timerInterval = null;
+            }
+            if (animationId) {
+                cancelAnimationFrame(animationId);
+                animationId = null;
+            }
+
+            // Detener y reiniciar música
+            backgroundMusic.pause();
+            backgroundMusic.currentTime = 0;
+
+            // Asegurar tamaño correcto del canvas
+            resizeCanvas();
+
+            // Reiniciar estado del juego
+            score = 0;
+            lives = 3;
+            timeLeft = 60;
+            money = [];
+            obstacles = [];
+            powerups = [];
+            particles = [];
+            animationTime = 0;
+
+            // Reiniciar estado del bocadillo
+            speechBubble.visible = false;
+            speechBubble.timer = 0;
+
+            // Inicializar nubes y plataformas
+            initClouds();
+            initPlatforms();
+
+            // Reiniciar velocidades del jugador
+            player.velocityX = 0;
+            player.velocityY = 0;
+            player.onGround = false;
+            deactivatePowerups();
+
+            // Reiniciar teclas
+            keys.left = false;
+            keys.right = false;
+            keys.space = false;
+
+            // Actualizar UI
+            updateUI();
+
+            // Ocultar pantallas
+            startScreen.style.display = 'none';
+            gameOverScreen.style.display = 'none';
+
+            // Iniciar juego
+            gameRunning = true;
+
+            // Iniciar música de fondo
+            backgroundMusic.play().catch(e => console.log('Audio autoplay blocked:', e));
+
+            // Iniciar temporizador
+            timerInterval = setInterval(() => {
+                if (!gameRunning) return;
+                timeLeft--;
+                updateUI();
+                if (timeLeft <= 0) {
+                    endGame();
+                }
+            }, 1000);
+
+            // Iniciar bucle del juego
+            console.log('Iniciando gameLoop');
+            gameLoop();
+        }
+
+        /**
+         * Termina el juego
+         */
+        function endGame() {
+            // Evitar llamadas múltiples
+            if (!gameRunning) return;
+
+            console.log('endGame() llamado');
+            gameRunning = false;
+
+            if (timerInterval) {
+                clearInterval(timerInterval);
+                timerInterval = null;
+            }
+            if (animationId) {
+                cancelAnimationFrame(animationId);
+                animationId = null;
+            }
+
+            // Detener música de fondo
+            backgroundMusic.pause();
+            backgroundMusic.currentTime = 0;
+
+            finalScoreDisplay.textContent = `$${score}`;
+            gameOverScreen.style.display = 'flex';
+            console.log('Game Over screen mostrado');
+        }
+
+        /**
+         * Reinicia el juego
+         */
+        function restartGame() {
+            console.log('restartGame() llamado');
+            gameOverScreen.style.display = 'none';
+            startGame();
+        }
+
+        // ============================================
+        // EVENT LISTENERS
+        // ============================================
+
+        document.addEventListener('keydown', (e) => {
+            if (e.code === 'ArrowLeft' || e.code === 'KeyA') {
+                keys.left = true;
+            }
+            if (e.code === 'ArrowRight' || e.code === 'KeyD') {
+                keys.right = true;
+            }
+            if (e.code === 'Space') {
+                keys.space = true;
+                e.preventDefault();
+            }
+        });
+
+        document.addEventListener('keyup', (e) => {
+            if (e.code === 'ArrowLeft' || e.code === 'KeyA') {
+                keys.left = false;
+            }
+            if (e.code === 'ArrowRight' || e.code === 'KeyD') {
+                keys.right = false;
+            }
+            if (e.code === 'Space') {
+                keys.space = false;
+            }
+        });
+
+        // Botones - asegurar que el DOM esté listo
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('DOM cargado');
+            const playBtn = document.getElementById('playButton');
+            const restartBtn = document.getElementById('restartButton');
+
+            if (playBtn) {
+                console.log('Botón play encontrado');
+                playBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    console.log('Click en JUGAR');
+                    startGame();
+                });
+            } else {
+                console.error('No se encontró el botón playButton');
+            }
+
+            if (restartBtn) {
+                console.log('Botón restart encontrado');
+                restartBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    console.log('Click en REINICIAR');
+                    gameOverScreen.style.display = 'none'; // Ocultar inmediatamente
+                    restartGame();
+                });
+            } else {
+                console.error('No se encontró el botón restartButton');
+            }
+        });
+
+        // Backup: también añadir listeners directamente por si el DOM ya está listo
+        window.onload = function() {
+            const playBtn = document.getElementById('playButton');
+            const restartBtn = document.getElementById('restartButton');
+
+            if (playBtn && !playBtn.hasAttribute('data-listener')) {
+                playBtn.setAttribute('data-listener', 'true');
+                playBtn.onclick = function(e) {
+                    e.preventDefault();
+                    startGame();
+                };
+            }
+
+            if (restartBtn && !restartBtn.hasAttribute('data-listener')) {
+                restartBtn.setAttribute('data-listener', 'true');
+                restartBtn.onclick = function(e) {
+                    e.preventDefault();
+                    gameOverScreen.style.display = 'none';
+                    restartGame();
+                };
+            }
+        };
+    </script>
+</body>
+</html>
