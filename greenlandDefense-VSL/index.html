@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Greenland Defense - Tower Defense</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div id="game-wrapper">
+    <canvas id="gameCanvas" width="800" height="600"></canvas>
+    <aside id="ui">
+      <h1>GREENLAND DEFENSE</h1>
+      <div class="stat">💰 Oro: <span id="gold">0</span></div>
+      <div class="stat">❤️ Vidas: <span id="lives">0</span></div>
+      <div class="stat">🌊 Oleada: <span id="wave">0/5</span></div>
+      <div class="panel-title">Torres</div>
+      <div class="tower-buttons">
+        <button class="tower-btn" data-type="archer">
+          🏹<br>Arquero Inuit<br>50 oro
+        </button>
+        <button class="tower-btn" data-type="ice">
+          ❄️<br>Cañón de Hielo<br>100 oro
+        </button>
+        <button class="tower-btn" data-type="catapult">
+          🪵<br>Catapulta<br>150 oro
+        </button>
+      </div>
+      <button id="startWave" class="start-btn">▶️ INICIAR OLEADA</button>
+      <div class="hint">
+        Click una torre y luego el mapa.<br>
+        Sitios válidos: fuera del camino.
+      </div>
+    </aside>
+  </div>
+  <div id="overlay" class="hidden">
+    <div id="overlay-content"></div>
+    <button id="restartBtn" class="start-btn small">Jugar de nuevo</button>
+  </div>
+  <!-- Cargamos el script de forma clásica para evitar bloqueos de módulos en file:// -->
+  <script src="game.js" defer></script>
+</body>
+</html>
