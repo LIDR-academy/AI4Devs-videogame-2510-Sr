@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Galaxy Shooter - APC</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- Contenedor principal del juego -->
+    <div id="game-container">
+        <!-- Menú inicial -->
+        <div id="start-menu">
+            <div class="start-menu-content" role="dialog" aria-labelledby="game-title">
+                <h1 id="game-title">Galaxy Shooter</h1>
+                <p>Presiona "Jugar" para comenzar</p>
+                <button id="start-button" aria-label="Iniciar juego">Jugar</button>
+            </div>
+        </div>
+        
+        <!-- Área de juego donde ocurre la acción -->
+        <div id="game-area" style="display: none;">
+            <!-- Puntaje -->
+            <div id="score">Puntaje: 0</div>
+            
+            <!-- Nivel -->
+            <div id="level">Nivel: 1</div>
+            
+            <!-- Vidas -->
+            <div id="lives">Vidas: 3</div>
+            
+            <!-- Nave del jugador -->
+            <div id="player"></div>
+            
+            <!-- Los proyectiles se crearán dinámicamente aquí -->
+        </div>
+    </div>
+
+    <!-- Script del juego -->
+    <script src="game.js"></script>
+</body>
+</html>
