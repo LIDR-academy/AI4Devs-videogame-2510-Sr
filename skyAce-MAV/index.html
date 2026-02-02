@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SkyAce - Arcade Fighter</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <div class="game-container">
+        <div class="header">
+            <h1>SKY ACE</h1>
+            <div class="game-info">
+                <div class="score-display">
+                    <span class="label">SCORE:</span>
+                    <span id="score">0</span>
+                </div>
+                <div class="lives-display">
+                    <span class="label">LIVES:</span>
+                    <span id="lives">3</span>
+                </div>
+                <div class="level-display">
+                    <span class="label">LEVEL:</span>
+                    <span id="level">1</span>
+                </div>
+                <button id="musicToggle" class="music-toggle" title="Toggle Music">🔊</button>
+            </div>
+        </div>
+
+        <div class="game-wrapper">
+            <canvas id="gameCanvas"></canvas>
+            
+            <div id="startScreen" class="screen">
+                <h2>SKY ACE</h2>
+                <p class="subtitle">Classic Arcade Shooter</p>
+                <div class="instructions">
+                    <h3>CONTROLS</h3>
+                    <p>⬅️ ➡️ ⬆️ ⬇️ Arrow Keys - Move</p>
+                    <p>SPACE - Fire</p>
+                    <p>P - Pause</p>
+                </div>
+                <button id="startButton" class="game-button">START GAME</button>
+                <div class="credits">
+                    <p>Developed for AI4Devs</p>
+                    <p>2025 © SkyAce-MAV</p>
+                </div>
+            </div>
+
+            <div id="pauseScreen" class="screen hidden">
+                <h2>PAUSED</h2>
+                <p>Press P to continue</p>
+            </div>
+
+            <div id="gameOverScreen" class="screen hidden">
+                <h2>GAME OVER</h2>
+                <p class="final-score">Your Score: <span id="finalScore">0</span></p>
+                <button id="restartButton" class="game-button">PLAY AGAIN</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts del juego -->
+    <script src="js/utils.js"></script>
+    <script src="js/sprites.js"></script>
+    <script src="js/bullet.js"></script>
+    <script src="js/powerup.js"></script>
+    <script src="js/enemy.js"></script>
+    <script src="js/player.js"></script>
+    <script src="js/collision.js"></script>
+    <script src="js/game.js"></script>
+</body>
+</html>
