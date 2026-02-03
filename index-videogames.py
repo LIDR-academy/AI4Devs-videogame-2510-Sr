@@ -20,7 +20,12 @@ def create_index_html(base_path):
         file.write('        <ul>\n')
 
         # Obtener y ordenar todas las carpetas por nombre alfabéticamente
-        directories = sorted([item for item in os.listdir(base_path) if os.path.isdir(os.path.join(base_path, item))])
+        # Excluir carpetas ocultas y carpetas especiales
+        excluded_dirs = {'.git', '.github', '__pycache__', '.vscode', '.idea'}
+        directories = sorted([item for item in os.listdir(base_path) 
+            if os.path.isdir(os.path.join(base_path, item)) 
+            and item not in excluded_dirs
+            and not item.startswith('.')])
 
         # Listar todas las carpetas y crear un enlace para cada juego
         for item in directories:
